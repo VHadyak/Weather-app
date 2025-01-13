@@ -1,5 +1,5 @@
 :root {
-  /* Custom CSS properties */
+  --bg-color: gray;
 }
 
 html {
@@ -20,11 +20,15 @@ body {
   min-height: 100vh;
   min-height: 100svh;
   box-sizing: border-box;
+  background-color: var(--bg-color);
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 @media (prefers-reduced-motion: no-preference) {
   html {
-        scroll-behavior: smooth;
+    scroll-behavior: smooth;
   }
 }
 
