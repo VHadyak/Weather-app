@@ -33,7 +33,7 @@ async function fetchWeatherData() {
   }
 }
 
-// Process and structure raw data from API into objects
+// Process and structure raw data from API into objects (metric)
 function organizeData(data) {
   const daysOfWeek = [
     "Monday",
@@ -49,6 +49,7 @@ function organizeData(data) {
   const weekForecast = data.days.slice(1, 7);
   const currentConditions = data.currentConditions;
 
+  const currentDateString = new Date().toISOString().split("T")[0];
   // Variables for calculating sun elevation
   const currentDate = new Date();
   const localDate = new Date(currentDate.getTime());
@@ -69,6 +70,7 @@ function organizeData(data) {
     windSpeed: currentConditions.windspeed, // km/h
     visibility: currentConditions.visibility, // km
 
+    // !!!
     get sunElevation() {
       const sunPosition = SunCalc.getPosition(localDate, latitude, longitude);
       return (sunPosition.altitude * 180) / Math.PI; // Convert from radians to degrees
@@ -79,7 +81,7 @@ function organizeData(data) {
   const weekForecastData = weekForecast.map((day) => {
     const date = new Date(day.datetime); // Convert string date into Date object
     return {
-      dayX: day.datetime, // !!!
+      dayX: day.datetime, // !!! TEMPORARY
       day: daysOfWeek[date.getDay()], // Day of the week
       temperatureMax: day.tempmax,
       temperatureMin: day.tempmin,
@@ -93,15 +95,36 @@ function organizeData(data) {
       visibility: day.visibility,
     };
   });
-  return { currentData, weekForecastData };
+
+  // Hourly forecast for 7 day week range (including Today's day)
+  const weekRange = data.days.slice(0, 7);
+
+  const hourlyForecastData = weekRange.map((day) => {
+    const date = new Date(day.datetime);
+    const isToday = day.datetime === currentDateString;
+    const hours = day.hours;
+
+    return {
+      date: day.datetime, // !!! TEMPORARY
+      day: isToday ? "Today" : daysOfWeek[date.getDay()],
+      // For each hourly object, only collect 'time of the day' and 'temperature'
+      hours: hours.map((hour) => ({
+        time: hour.datetime,
+        temperature: hour.temp,
+      })),
+    };
+  });
+  return { currentData, weekForecastData, hourlyForecastData };
 }
 
 // Destructure processed data into weather data objects for easy access
 function handleWeatherData(data) {
   // Get today's weather data, 6-day forecast data
-  const { currentData, weekForecastData } = organizeData(data);
-  console.log(currentData);
-  console.log(weekForecastData);
+  const { currentData, weekForecastData, hourlyForecastData } =
+    organizeData(data);
+  //console.log("Today's data", currentData);
+  //console.log("Week Forecast", weekForecastData);
+  //console.log("Hourly Forecast", hourlyForecastData);
 }
 
 function initFetch() {
