@@ -1,4 +1,5 @@
 import SunCalc from "suncalc"; // Library for calculating sun's position
+import { format } from "date-fns";
 
 const userInput = document.getElementById("search-input");
 const btnRequest = document.getElementById("search-btn");
@@ -21,6 +22,9 @@ async function fetchWeatherData() {
     const response = await fetch(url, { mode: "cors" });
 
     if (!response.ok) {
+      if (response.status === 429) {
+        throw new Error("API rate limit exceeded. Try again later!");
+      }
       throw new Error("Weather data not found!");
     }
 
@@ -45,22 +49,31 @@ function organizeData(data) {
     "Sunday",
   ];
 
-  // Arr of the following 6 days with weather data (excluding Today's day)
+  // Arr of the following 6 days with weather data (excluding Today's day, only for 'daily' forecast)
   const weekForecast = data.days.slice(1, 7);
   const currentConditions = data.currentConditions;
 
-  const currentDateString = new Date().toISOString().split("T")[0];
-  // Variables for calculating sun elevation
+  // Variables for calculating sun elevation, and hourly forecast
   const currentDate = new Date();
-  const localDate = new Date(currentDate.getTime());
+  const formattedDate = format(currentDate, "yyyy-MM-dd"); // Today's date in string format
+  const currentHour = currentDate.getHours();
+  const hoursLeftToday = 24 - currentHour;
+
   const latitude = data.latitude;
   const longitude = data.longitude;
+  const today = data.days[0];
+  const tomorrow = format(
+    currentDate.setDate(currentDate.getDate() + 1),
+    "yyyy-MM-dd",
+  );
 
-  // Data for today
+  // DATA FOR TODAY
   const currentData = {
     location: data.resolvedAddress,
     day: "Today",
     temperature: currentConditions.temp, // celsius
+    temperatureMax: today.tempmax,
+    temperatureMin: today.tempmin,
     condition: currentConditions.conditions,
     feelsLike: currentConditions.feelslike,
     humidity: currentConditions.humidity, // percentage
@@ -70,18 +83,17 @@ function organizeData(data) {
     windSpeed: currentConditions.windspeed, // km/h
     visibility: currentConditions.visibility, // km
 
-    // !!!
     get sunElevation() {
-      const sunPosition = SunCalc.getPosition(localDate, latitude, longitude);
+      const sunPosition = SunCalc.getPosition(currentDate, latitude, longitude);
       return (sunPosition.altitude * 180) / Math.PI; // Convert from radians to degrees
     },
   };
 
-  // Data for the next 6 days
+  // DATA FOR THE NEXT 6 DAYS
   const weekForecastData = weekForecast.map((day) => {
     const date = new Date(day.datetime); // Convert string date into Date object
     return {
-      dayX: day.datetime, // !!! TEMPORARY
+      date: day.datetime, // !!! TEMPORARY
       day: daysOfWeek[date.getDay()], // Day of the week
       temperatureMax: day.tempmax,
       temperatureMin: day.tempmin,
@@ -96,21 +108,40 @@ function organizeData(data) {
     };
   });
 
-  // Hourly forecast for 7 day week range (including Today's day)
-  const weekRange = data.days.slice(0, 7);
+  // DATA FOR THE NEXT 24 HOURS
+  const filteredDays = data.days.filter((day) => day.datetime >= formattedDate); // Filter days starting from 'today'
+  const weekRange = filteredDays.slice(0, 2); // Hourly forecast for 2 day range (including Today's day and Tomorrow's day)
 
   const hourlyForecastData = weekRange.map((day) => {
-    const date = new Date(day.datetime);
-    const isToday = day.datetime === currentDateString;
+    const isToday = day.datetime === formattedDate;
+    const isTomorrow = day.datetime === tomorrow;
     const hours = day.hours;
+
+    // Filter hours for today to include only the ones from the current hour onward
+    const filteredHours = isToday
+      ? hours.filter((hour) => {
+          const hourTime = new Date(
+            `${formattedDate}T${hour.datetime}`,
+          ).getHours();
+          return hourTime >= currentHour; // Return hours starting from the current hour
+        })
+      : isTomorrow
+        ? hours.slice(0, 24 - hoursLeftToday) // Subtract remaining hours of today from tomorrow's hours
+        : [];
 
     return {
       date: day.datetime, // !!! TEMPORARY
-      day: isToday ? "Today" : daysOfWeek[date.getDay()],
-      // For each hourly object, only collect 'time of the day' and 'temperature'
-      hours: hours.map((hour) => ({
-        time: hour.datetime,
+      // For each hourly object, only collect 'time of the day', 'temperature' and 'weather condition'
+      hours: filteredHours.map((hour) => ({
+        time:
+          // Set to 'Now' for current time
+          isToday &&
+          new Date(`${formattedDate}T${hour.datetime}`).getHours() ===
+            currentHour
+            ? "Now"
+            : hour.datetime,
         temperature: hour.temp,
+        condition: hour.conditions,
       })),
     };
   });
