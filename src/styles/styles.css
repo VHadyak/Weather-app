@@ -1,5 +1,8 @@
 :root {
-  --bg-color: gray;
+  --bg-body-color: gray;
+  --bg-content-color: white;
+  --degree-wrapper-gap: 10px;
+  --5-card-view: 0 0 calc((100% - 160px) / 5);
 }
 
 html {
@@ -20,10 +23,327 @@ body {
   min-height: 100vh;
   min-height: 100svh;
   box-sizing: border-box;
-  background-color: var(--bg-color);
+  background-color: var(--bg-body-color);
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+.content-wrapper {
+  width: 75vw;
+  height: 85vh;
+  background-color: var(--bg-content-color);
+  border-radius: 60px;
+}
+
+/* SEARCH WRAPPER */
+.search-wrapper {
+  position: relative;
+  justify-self: center;
+  width: 35%;
+  display: flex;
+  justify-content: center;
+  padding-top: 40px;
+}
+
+input[type="search"]#search-input {
+  position: relative;
+  width: 100%;
+  padding-left: 15px;
+  font-size: 1.25rem;
+  height: 35px;
+  border: none;
+  outline: none;
+  background-color: white;
+  border-top-left-radius: 20px;
+  border-bottom-left-radius: 20px;
+  padding-right: 15px;
+  border-left: 2px solid black;
+  border-bottom: 2px solid black;
+  border-top: 2px solid black;
+}
+
+button#search-btn {
+  padding: 0;
+  padding-right: 15px;
+  background-color: white;
+  border-top-right-radius: 20px;
+  border-bottom-right-radius: 20px;
+  cursor: pointer;
+  border-left: none;
+  border-right: 2px solid black;
+  border-bottom: 2px solid black;
+  border-top: 2px solid black;
+}
+
+button#search-btn::before {
+  content: "\1F50E"; /* Unicode for 🔍 */
+  font-size: 16px;
+}
+
+/* HEADER INFO (WEATHER) */
+.main-info-wrapper {
+  width: 35%;
+  justify-self: center;
+  height: 230px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+#location-name {
+  padding-top: 10px;
+  font-size: 2rem;
+  font-weight: bold;
+  outline: 1px solid black;
+  width: 100%;
+  text-align: center;
+}
+
+.degree-wrapper {
+  outline: 2px solid red;
+  height: 50%;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  padding-right: 40px;
+  gap: var(--degree-wrapper-gap);
+}
+
+#condition-icon {
+  outline: 2px solid green;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 3rem;
+}
+
+#degrees {
+  outline: 1px solid rgb(49, 49, 26);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 7rem;
+  position: relative;
+  padding-left: 5px;
+}
+
+/* Degree symbol */
+.degrees span {
+  font-size: 3rem;
+  height: 100%;
+  transform: translateX(-5px);
+  padding-top: 7px;
+}
+
+.degrees-unit {
+  display: flex;
+  flex-direction: column;
+  padding-top: 11px;
+  outline: 1px solid green;
+  transform: translateX(calc(0px - var(--degree-wrapper-gap)));
+}
+
+.degrees-unit button {
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 1.5rem;
+}
+
+#condition-desc {
+  font-size: 1.5rem;
+  align-self: center;
+}
+
+#feels-like {
+  font-size: 1.1rem;
+  padding-top: 2px;
+}
+
+#time-updated {
+  font-size: 1.1rem;
+  align-self: center;
+  padding-top: 2px;
+}
+
+/* Forecast switch (daily/hourly) */
+.forecast-switch {
+  width: 100%;
+  display: flex;
+  justify-content: flex-start;
+  padding-left: 173px;
+  gap: 15px;
+  transform: translateY(5px);
+}
+
+.forecast-switch button {
+  padding: 15px 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 25px;
+  font-size: 1.3rem;
+  background-color: transparent;
+  border: 1px solid black;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+/* CARD SLIDER STYLING */
+.main-slider-wrapper {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  outline: 1px solid red;
+  margin-top: 20px;
+}
+
+/* Swiper buttons style */
+.main-slider-wrapper button {
+  background-color: white;
+  border: 1px solid gray;
+  cursor: pointer;
+  width: 40px;
+  height: 100px;
+  align-self: center;
+  font-size: 2rem;
+  user-select: none;
+}
+
+/* 
+button.prev-btn {
+}
+
+button.next-btn {
+} */
+
+.slider-wrapper {
+  display: flex;
+  height: 30vh;
+  width: 80%;
+  justify-self: center;
+  overflow: hidden;
+  outline: 1px solid black;
+}
+
+.daily-card-list {
+  display: flex;
+  width: 100%;
+  gap: 40px;
+  transition: transform 0.5s ease;
+  padding: 5px;
+}
+
+/* Card style */
+.daily-card-list div.daily-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  outline: 1px solid blue;
+  flex: var(--5-card-view);
+  border-radius: 30px;
+}
+
+p.day {
+  font-size: 1.8rem;
+}
+
+/* Icon placeholder */
+.daily-icon {
+  outline: 1px solid red;
+  font-size: 1.4rem;
+  width: 100px;
+  height: 100px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.high-low {
+  display: flex;
+  gap: 25px;
+  font-size: 1.8rem;
+}
+
+.day-high,
+.day-low {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.day-high span,
+.day-low span {
+  font-size: 1.3rem;
+  height: 100%;
+  padding-top: 2px;
+}
+
+.daily-desc {
+  font-size: 1.4rem;
+}
+
+/* SECONDARY DATA (WEATHER) */
+.secondary-info-wrapper {
+  justify-self: center;
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  margin-top: 45px;
+  width: 60%;
+  padding-left: 5px;
+  padding-right: 5px;
+  flex-wrap: wrap;
+  outline: 1px solid purple;
+}
+
+.data-item {
+  display: flex;
+  justify-content: center;
+  outline: 1px solid blue;
+  width: 200px;
+  padding: 15px;
+}
+
+.flex-left {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 70%;
+}
+
+div.data-item div.info-title {
+  font-size: 1.2rem;
+}
+
+div.data-item div.info-stat {
+  font-size: 1.2rem;
+}
+
+.stat-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  outline: 3px solid green;
+  height: 100%;
+  width: 30%;
+}
+
+/* Remove 'x' on search input */
+input[type="search"]::-webkit-search-decoration,
+input[type="search"]::-webkit-search-cancel-button,
+input[type="search"]::-webkit-search-results-button,
+input[type="search"]::-webkit-search-results-decoration {
+  -webkit-appearance: none;
+}
+
+/* Remove search input background color on autofill */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px white inset !important;
 }
 
 @media (prefers-reduced-motion: no-preference) {
