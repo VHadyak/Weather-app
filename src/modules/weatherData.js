@@ -69,20 +69,23 @@ function organizeData(data) {
 
   // DATA FOR TODAY
   const currentData = {
-    location: data.resolvedAddress,
     day: "Today",
+    location: data.resolvedAddress,
     temperature: currentConditions.temp, // celsius
     temperatureMax: today.tempmax,
     temperatureMin: today.tempmin,
     condition: currentConditions.conditions,
     feelsLike: currentConditions.feelslike,
-    humidity: currentConditions.humidity, // percentage
-    precipitation: currentConditions.precip, // millimeters
     sunrise: currentConditions.sunrise,
     sunset: currentConditions.sunset,
-    windSpeed: currentConditions.windspeed, // km/h
     visibility: currentConditions.visibility, // km
+    humidity: currentConditions.humidity, // percentage
+    windSpeed: currentConditions.windspeed, // km/h
+    windDirection: currentConditions.winddir, //degrees
+    pressure: currentConditions.pressure, //mb
+    uvIndex: currentConditions.uvindex, // out of 10
 
+    // Use this for background change based on time of day
     get sunElevation() {
       const sunPosition = SunCalc.getPosition(currentDate, latitude, longitude);
       return (sunPosition.altitude * 180) / Math.PI; // Convert from radians to degrees
@@ -99,12 +102,14 @@ function organizeData(data) {
       temperatureMin: day.tempmin,
       condition: day.conditions,
       feelslike: day.feelslike,
-      humidity: day.humidity,
-      precipitation: day.precip,
       sunrise: day.sunrise,
       sunset: day.sunset,
-      windSpeed: day.windspeed,
       visibility: day.visibility,
+      humidity: day.humidity,
+      windSpeed: day.windspeed,
+      windDirection: day.winddir,
+      pressure: day.pressure,
+      uvIndex: day.uvindex,
     };
   });
 
