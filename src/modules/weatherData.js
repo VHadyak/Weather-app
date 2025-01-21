@@ -1,5 +1,6 @@
 import SunCalc from "suncalc"; // Library for calculating sun's position
 import { format } from "date-fns";
+import { displayData } from "./dom";
 
 const userInput = document.getElementById("search-input");
 const btnRequest = document.getElementById("search-btn");
@@ -9,7 +10,7 @@ const API_KEY = "9545QA2MGPWNHSND234UFU28K"; // Public Visual Crossing API key
 const getLocation = () => userInput.value;
 
 // Get weather data from API
-async function fetchWeatherData() {
+export async function fetchWeatherData() {
   const location = getLocation();
   if (location.trim() === "") return;
 
@@ -27,11 +28,8 @@ async function fetchWeatherData() {
       }
       throw new Error("Weather data not found!");
     }
-
     const data = await response.json();
-
-    handleWeatherData(data); // Process json data
-    console.log("JSON Data:", data);
+    return organizeData(data);
   } catch (err) {
     console.log("Error fetching weather data!", err.message);
   }
@@ -39,33 +37,38 @@ async function fetchWeatherData() {
 
 // Process and structure raw data from API into objects (metric)
 function organizeData(data) {
-  const daysOfWeek = [
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday",
-    "Sunday",
-  ];
+  const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
   // Arr of the following 6 days with weather data (excluding Today's day, only for 'daily' forecast)
   const weekForecast = data.days.slice(1, 7);
   const currentConditions = data.currentConditions;
 
-  // Variables for calculating sun elevation, and hourly forecast
   const currentDate = new Date();
-  const formattedDate = format(currentDate, "yyyy-MM-dd"); // Today's date in string format
-  const currentHour = currentDate.getHours();
-  const hoursLeftToday = 24 - currentHour;
+
+  const tzoffset = data.tzoffset;
+  const utcTime = currentDate.getUTCHours(); // Get the current hour in UTC (24-hour format)
+
+  let tzTime = utcTime + tzoffset; // Get time (in number format) of the target location based on timezone offset
+  const hoursLeftToday = 24 - tzTime;
+
+  /* If local time greater than 24 or less than 0, 
+  then readjust local time back to 24-hour range */
+  if (tzTime >= 24) {
+    tzTime -= 24;
+  } else if (tzTime < 0) {
+    tzTime += 24;
+  }
+
+  // Get date of the target location based on its timezone
+  const adjustedDate = new Date(currentDate);
+  adjustedDate.setHours(currentDate.getHours() + tzoffset);
+  const formattedDate = format(adjustedDate, "yyyy-MM-dd");
 
   const latitude = data.latitude;
   const longitude = data.longitude;
+
   const today = data.days[0];
-  const tomorrow = format(
-    currentDate.setDate(currentDate.getDate() + 1),
-    "yyyy-MM-dd",
-  );
+  const tomorrow = format(adjustedDate.setDate(adjustedDate.getDate() + 1), "yyyy-MM-dd");
 
   // DATA FOR TODAY
   const currentData = {
@@ -85,7 +88,7 @@ function organizeData(data) {
     pressure: currentConditions.pressure, //mb
     uvIndex: currentConditions.uvindex, // out of 10
 
-    // Use this for background change based on time of day
+    // Use this for background transition change based on time of day
     get sunElevation() {
       const sunPosition = SunCalc.getPosition(currentDate, latitude, longitude);
       return (sunPosition.altitude * 180) / Math.PI; // Convert from radians to degrees
@@ -125,10 +128,8 @@ function organizeData(data) {
     // Filter hours for today to include only the ones from the current hour onward
     const filteredHours = isToday
       ? hours.filter((hour) => {
-          const hourTime = new Date(
-            `${formattedDate}T${hour.datetime}`,
-          ).getHours();
-          return hourTime >= currentHour; // Return hours starting from the current hour
+          const hourTime = new Date(`${formattedDate}T${hour.datetime}`).getHours();
+          return hourTime >= tzTime; // Return hours starting from the current hour
         })
       : isTomorrow
         ? hours.slice(0, 24 - hoursLeftToday) // Subtract remaining hours of today from tomorrow's hours
@@ -140,11 +141,7 @@ function organizeData(data) {
       hours: filteredHours.map((hour) => ({
         time:
           // Set to 'Now' for current time
-          isToday &&
-          new Date(`${formattedDate}T${hour.datetime}`).getHours() ===
-            currentHour
-            ? "Now"
-            : hour.datetime,
+          isToday && new Date(`${formattedDate}T${hour.datetime}`).getHours() === tzTime ? "Now" : hour.datetime,
         temperature: hour.temp,
         condition: hour.conditions,
       })),
@@ -153,21 +150,9 @@ function organizeData(data) {
   return { currentData, weekForecastData, hourlyForecastData };
 }
 
-// Destructure processed data into weather data objects for easy access
-function handleWeatherData(data) {
-  // Get today's weather data, 6-day forecast data
-  const { currentData, weekForecastData, hourlyForecastData } =
-    organizeData(data);
-  //console.log("Today's data", currentData);
-  //console.log("Week Forecast", weekForecastData);
-  //console.log("Hourly Forecast", hourlyForecastData);
-}
-
-function initFetch() {
+export function initFetch() {
   btnRequest.addEventListener("click", (e) => {
     e.preventDefault();
-    fetchWeatherData();
+    displayData();
   });
 }
-
-export { initFetch };
