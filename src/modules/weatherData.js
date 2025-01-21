@@ -15,7 +15,7 @@ export async function fetchWeatherData() {
   const location = storedLocation;
   if (location.trim() === "") return;
 
-  // If data is already cached, return it to avoid making another API call
+  // If data is already cached, return it, to avoid making another API call
   if (weatherDataCache) return weatherDataCache;
 
   const url =
@@ -34,7 +34,7 @@ export async function fetchWeatherData() {
     }
     const data = await response.json();
     console.log("JSON Data:", data);
-    // Cache the data to prevent future API calls (especially when switching daily/hourly forecasts)
+    // Cache the data to prevent future unnecessary API calls (especially when switching daily/hourly forecasts)
     weatherDataCache = organizeData(data);
     return weatherDataCache;
   } catch (err) {
@@ -68,7 +68,7 @@ function organizeData(data) {
 
   // Get date of the target location based on its timezone
   const adjustedDate = new Date(currentDate);
-  adjustedDate.setHours(currentDate.getHours() + tzoffset);
+  adjustedDate.setHours(utcTime + tzoffset);
   const formattedDate = format(adjustedDate, "yyyy-MM-dd");
 
   const latitude = data.latitude;
@@ -136,7 +136,7 @@ function organizeData(data) {
     const filteredHours = isToday
       ? hours.filter((hour) => {
           const hourTime = new Date(`${formattedDate}T${hour.datetime}`).getHours();
-          return hourTime >= tzTime; // Return hours starting from the current hour
+          return hourTime >= tzTime; // Return hours starting from the current hour in local time
         })
       : isTomorrow
         ? hours.slice(0, 24 - hoursLeftToday) // Subtract remaining hours of today from tomorrow's hours
