@@ -1,18 +1,22 @@
 import SunCalc from "suncalc"; // Library for calculating sun's position
 import { format } from "date-fns";
-import { displayData } from "./dom";
+import { displayDailyData } from "./dom";
 
 const userInput = document.getElementById("search-input");
 const btnRequest = document.getElementById("search-btn");
 
 const API_KEY = "9545QA2MGPWNHSND234UFU28K"; // Public Visual Crossing API key
 
-const getLocation = () => userInput.value;
+let weatherDataCache = null;
+let storedLocation = "";
 
 // Get weather data from API
 export async function fetchWeatherData() {
-  const location = getLocation();
+  const location = storedLocation;
   if (location.trim() === "") return;
+
+  // If data is already cached, return it to avoid making another API call
+  if (weatherDataCache) return weatherDataCache;
 
   const url =
     `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${location}` +
@@ -29,7 +33,10 @@ export async function fetchWeatherData() {
       throw new Error("Weather data not found!");
     }
     const data = await response.json();
-    return organizeData(data);
+    console.log("JSON Data:", data);
+    // Cache the data to prevent future API calls (especially when switching daily/hourly forecasts)
+    weatherDataCache = organizeData(data);
+    return weatherDataCache;
   } catch (err) {
     console.log("Error fetching weather data!", err.message);
   }
@@ -151,8 +158,18 @@ function organizeData(data) {
 }
 
 export function initFetch() {
-  btnRequest.addEventListener("click", (e) => {
+  btnRequest.addEventListener("click", async (e) => {
     e.preventDefault();
-    displayData();
+
+    const location = userInput.value.trim();
+
+    if (location !== "") {
+      storedLocation = location; // Store the location
+      weatherDataCache = null; // Clear previous cache
+
+      await displayDailyData(); // Fetch and display the daily data
+    }
+
+    userInput.value = "";
   });
 }
