@@ -1,16 +1,16 @@
 import SunCalc from "suncalc"; // Library for calculating sun's position
 import { format } from "date-fns";
-import { displayDailyData } from "./dom";
+import { displayWeatherData } from "./dom";
 
 const userInput = document.getElementById("search-input");
 const btnRequest = document.getElementById("search-btn");
 
-const API_KEY = "9545QA2MGPWNHSND234UFU28K"; // Public Visual Crossing API key
+const API_KEY = "9545QA2MGPWNHSND234UFU28K"; // Visual Crossing Public API key
 
 let weatherDataCache = null;
 let storedLocation = "";
 
-// Get weather data from API
+// Fetch weather data from API
 export async function fetchWeatherData() {
   const location = storedLocation;
   if (location.trim() === "") return;
@@ -34,12 +34,52 @@ export async function fetchWeatherData() {
     }
     const data = await response.json();
     console.log("JSON Data:", data);
-    // Cache the data to prevent future unnecessary API calls (especially when switching daily/hourly forecasts)
-    weatherDataCache = organizeData(data);
+    weatherDataCache = organizeData(data); /* Cache the data to prevent future unnecessary API calls 
+                                            (especially when switching daily/hourly forecasts) */
+
+    const { locality, country } = await getLocationDetails(data.latitude, data.longitude);
+
+    if (locality && country) {
+      weatherDataCache.currentData.location = `${locality}, ${country}`; // Add location to currentData object
+    } else {
+      weatherDataCache.currentData.location = storedLocation; // Fallback if location API fails
+    }
+
     return weatherDataCache;
   } catch (err) {
     console.log("Error fetching weather data!", err.message);
   }
+}
+
+/* Fetch the city and country names from the API, ensuring the location is returned in English,
+even if a foreign country is searched. */
+export async function getLocationDetails(latitude, longitude) {
+  const url = `https://us1.locationiq.com/v1/reverse?key=pk.bdcf91109a5cf61e65c8ee8445174854&lat=${latitude}&lon=${longitude}&format=json&`;
+
+  try {
+    const response = await fetch(url, { mode: "cors" });
+
+    if (!response.ok) {
+      if (response.status === 429) {
+        throw new Error("API rate limit exceeded. Try again later!");
+      }
+      throw new Error("Unable to fetch address location!");
+    }
+
+    const data = await response.json();
+
+    const locality = data.address.city;
+    const country = data.address.country;
+
+    return { locality, country };
+  } catch (err) {
+    console.log("Error fetching English address location!", err.message);
+  }
+}
+
+// Return fallback value if value is undefined or null
+function def(value, fallback = "N/A") {
+  return value != null ? value : fallback;
 }
 
 // Process and structure raw data from API into objects (metric)
@@ -49,12 +89,9 @@ function organizeData(data) {
   // Arr of the following 6 days with weather data (excluding Today's day, only for 'daily' forecast)
   const weekForecast = data.days.slice(1, 7);
   const currentConditions = data.currentConditions;
-
   const currentDate = new Date();
-
   const tzoffset = data.tzoffset;
   const utcTime = currentDate.getUTCHours(); // Get the current hour in UTC (24-hour format)
-
   let tzTime = utcTime + tzoffset; // Get time (in number format) of the target location based on timezone offset
   const hoursLeftToday = 24 - tzTime;
 
@@ -69,18 +106,16 @@ function organizeData(data) {
   // Get date of the target location based on its timezone
   const adjustedDate = new Date(currentDate);
   adjustedDate.setHours(utcTime + tzoffset);
-  const formattedDate = format(adjustedDate, "yyyy-MM-dd");
 
+  const formattedDate = format(adjustedDate, "yyyy-MM-dd");
   const latitude = data.latitude;
   const longitude = data.longitude;
-
   const today = data.days[0];
   const tomorrow = format(adjustedDate.setDate(adjustedDate.getDate() + 1), "yyyy-MM-dd");
 
   // DATA FOR TODAY
   const currentData = {
     day: "Today",
-    location: data.resolvedAddress,
     temperature: currentConditions.temp, // celsius
     temperatureMax: today.tempmax,
     temperatureMin: today.tempmin,
@@ -88,12 +123,12 @@ function organizeData(data) {
     feelsLike: currentConditions.feelslike,
     sunrise: currentConditions.sunrise,
     sunset: currentConditions.sunset,
-    visibility: currentConditions.visibility, // km
-    humidity: currentConditions.humidity, // percentage
-    windSpeed: currentConditions.windspeed, // km/h
-    windDirection: currentConditions.winddir, //degrees
-    pressure: currentConditions.pressure, //mb
-    uvIndex: currentConditions.uvindex, // out of 10
+    visibility: def(currentConditions.visibility), // km
+    humidity: def(currentConditions.humidity), // percentage
+    windSpeed: def(currentConditions.windspeed), // km/h
+    windDirection: def(currentConditions.winddir), // degrees
+    pressure: def(currentConditions.pressure), // mb
+    uvIndex: def(currentConditions.uvindex), // out of 10
 
     // Use this for background transition change based on time of day
     get sunElevation() {
@@ -106,7 +141,7 @@ function organizeData(data) {
   const weekForecastData = weekForecast.map((day) => {
     const date = new Date(day.datetime); // Convert string date into Date object
     return {
-      date: day.datetime, // !!! TEMPORARY
+      date: day.datetime,
       day: daysOfWeek[date.getDay()], // Day of the week
       temperatureMax: day.tempmax,
       temperatureMin: day.tempmin,
@@ -114,12 +149,12 @@ function organizeData(data) {
       feelslike: day.feelslike,
       sunrise: day.sunrise,
       sunset: day.sunset,
-      visibility: day.visibility,
-      humidity: day.humidity,
-      windSpeed: day.windspeed,
-      windDirection: day.winddir,
-      pressure: day.pressure,
-      uvIndex: day.uvindex,
+      visibility: def(day.visibility),
+      humidity: def(day.humidity),
+      windSpeed: def(day.windspeed),
+      windDirection: def(day.winddir),
+      pressure: def(day.pressure),
+      uvIndex: def(day.uvindex),
     };
   });
 
@@ -167,7 +202,7 @@ export function initFetch() {
       storedLocation = location; // Store the location
       weatherDataCache = null; // Clear previous cache
 
-      await displayDailyData(); // Fetch and display the daily data
+      await displayWeatherData("Daily"); // Fetch and display the daily data
     }
 
     userInput.value = "";
