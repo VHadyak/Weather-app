@@ -1,5 +1,6 @@
 import SunCalc from "suncalc"; // Library for calculating sun's position
-import { format } from "date-fns";
+import { format, parse, addDays } from "date-fns";
+
 import { displayWeatherData } from "./dom";
 
 const userInput = document.getElementById("search-input");
@@ -33,7 +34,6 @@ export async function fetchWeatherData() {
       throw new Error("Weather data not found!");
     }
     const data = await response.json();
-    console.log("JSON Data:", data);
     weatherDataCache = organizeData(data); /* Cache the data to prevent future unnecessary API calls 
                                             (especially when switching daily/hourly forecasts) */
 
@@ -44,7 +44,6 @@ export async function fetchWeatherData() {
     } else {
       weatherDataCache.currentData.location = storedLocation; // Fallback if location API fails
     }
-
     return weatherDataCache;
   } catch (err) {
     console.log("Error fetching weather data!", err.message);
@@ -73,7 +72,7 @@ export async function getLocationDetails(latitude, longitude) {
 
     return { locality, country };
   } catch (err) {
-    console.log("Error fetching English address location!", err.message);
+    console.log("Error fetching an address location!", err.message);
   }
 }
 
@@ -84,16 +83,14 @@ function def(value, fallback = "N/A") {
 
 // Process and structure raw data from API into objects (metric)
 function organizeData(data) {
-  const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-
-  // Arr of the following 6 days with weather data (excluding Today's day, only for 'daily' forecast)
-  const weekForecast = data.days.slice(1, 7);
-  const currentConditions = data.currentConditions;
   const currentDate = new Date();
+  const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+  const weekForecast = data.days.slice(1, 7); // Arr of the following 6 days with weather data (excluding Today's day, only for 'daily' forecast)
+  const currentConditions = data.currentConditions;
   const tzoffset = data.tzoffset;
+  const timezone = data.timezone;
   const utcTime = currentDate.getUTCHours(); // Get the current hour in UTC (24-hour format)
   let tzTime = utcTime + tzoffset; // Get time (in number format) of the target location based on timezone offset
-  const hoursLeftToday = 24 - tzTime;
 
   /* If local time greater than 24 or less than 0, 
   then readjust local time back to 24-hour range */
@@ -103,22 +100,31 @@ function organizeData(data) {
     tzTime += 24;
   }
 
-  // Get date of the target location based on its timezone
-  const adjustedDate = new Date(currentDate);
-  adjustedDate.setHours(utcTime + tzoffset);
+  const hoursLeftToday = 24 - tzTime;
 
-  const formattedDate = format(adjustedDate, "yyyy-MM-dd");
+  const dateFormat = new Intl.DateTimeFormat("en-US", {
+    timeZone: timezone,
+    timeZoneName: "short",
+  });
+
+  const formatted = dateFormat.format(currentDate);
+  const datePart = formatted.split(",")[0]; // Extract date part
+  const parsedDate = parse(datePart, "M/d/yyyy", new Date()); // Parse the date string into a Date object
+  const formattedDate = format(parsedDate, "yyyy-MM-dd"); // Format the date into "yyyy-MM-dd"
+  const tomorrowDate = addDays(parsedDate, 1);
+  const tomorrow = format(tomorrowDate, "yyyy-MM-dd");
+
+  // Sun elevation variables
   const latitude = data.latitude;
   const longitude = data.longitude;
   const today = data.days[0];
-  const tomorrow = format(adjustedDate.setDate(adjustedDate.getDate() + 1), "yyyy-MM-dd");
 
   // DATA FOR TODAY
   const currentData = {
     day: "Today",
     temperature: currentConditions.temp, // celsius
-    temperatureMax: today.tempmax,
-    temperatureMin: today.tempmin,
+    temperatureHigh: today.tempmax,
+    temperatureLow: today.tempmin,
     condition: currentConditions.conditions,
     feelsLike: currentConditions.feelslike,
     sunrise: currentConditions.sunrise,
@@ -143,8 +149,8 @@ function organizeData(data) {
     return {
       date: day.datetime,
       day: daysOfWeek[date.getDay()], // Day of the week
-      temperatureMax: day.tempmax,
-      temperatureMin: day.tempmin,
+      temperatureHigh: day.tempmax,
+      temperatureLow: day.tempmin,
       condition: day.conditions,
       feelslike: day.feelslike,
       sunrise: day.sunrise,
@@ -173,13 +179,12 @@ function organizeData(data) {
           const hourTime = new Date(`${formattedDate}T${hour.datetime}`).getHours();
           return hourTime >= tzTime; // Return hours starting from the current hour in local time
         })
-      : isTomorrow
+      : isTomorrow // Include remaining hours from tomorrow
         ? hours.slice(0, 24 - hoursLeftToday) // Subtract remaining hours of today from tomorrow's hours
         : [];
 
     return {
-      date: day.datetime, // !!! TEMPORARY
-      // For each hourly object, only collect 'time of the day', 'temperature' and 'weather condition'
+      date: day.datetime,
       hours: filteredHours.map((hour) => ({
         time:
           // Set to 'Now' for current time
