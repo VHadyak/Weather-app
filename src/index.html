@@ -16,7 +16,7 @@
         <div id="location-name">Calgary</div>
         <div class="degree-wrapper">
           <div id="condition-icon">Icon</div>
-          <div id="degrees">23<span>&#176;</span></div>
+          <div id="degrees"><span></span></div>
           <div class="degrees-unit">
             <button type="button">C</button>
             <button type="button">F</button>
@@ -36,70 +36,71 @@
         <button class="prev-btn">&lt</button>
         <div class="slider-wrapper">
           <div class="daily-card-list">
-            <div class="daily-card">
-              <p class="day">Today</p>
+            <div class="daily-card today-card card">
+              <p class="day"></p>
               <div class="daily-icon">Icon</div>
               <div class="high-low">
-                <p class="day-high">28<span>&#176;</span></p>
-                <p class="day-low">19<span>&#176;</span></p>
+                <p class="day-high"></p>
+                <p class="day-low"></p>
               </div>
-              <div class="daily-desc">Clear</div>
+              <div class="daily-desc"></div>
             </div>
-            <div class="daily-card">
-              <p class="day">Tuesday</p>
+            <div class="daily-card card">
+              <p class="day"></p>
               <div class="daily-icon">Icon</div>
               <div class="high-low">
-                <p class="day-high">28<span>&#176;</span></p>
-                <p class="day-low">19<span>&#176;</span></p>
+                <p class="day-high"></p>
+                <p class="day-low"></p>
               </div>
-              <div class="daily-desc">Clear</div>
+              <div class="daily-desc"></div>
             </div>
-            <div class="daily-card">
-              <p class="day">Wednesday</p>
+            <div class="daily-card card">
+              <p class="day"></p>
               <div class="daily-icon">Icon</div>
               <div class="high-low">
-                <p class="day-high">28<span>&#176;</span></p>
-                <p class="day-low">19<span>&#176;</span></p>
+                <p class="day-high"></p>
+                <p class="day-low"></p>
               </div>
-              <div class="daily-desc">Clear</div>
+              <div class="daily-desc"></div>
             </div>
-            <div class="daily-card">
-              <p class="day">Thursday</p>
+            <div class="daily-card card">
+              <p class="day"></p>
               <div class="daily-icon">Icon</div>
               <div class="high-low">
-                <p class="day-high">28<span>&#176;</span></p>
-                <p class="day-low">19<span>&#176;</span></p>
+                <p class="day-high"></p>
+                <p class="day-low"></p>
               </div>
-              <div class="daily-desc">Clear</div>
+              <div class="daily-desc"></div>
             </div>
-            <div class="daily-card">
-              <p class="day">Friday</p>
+            <div class="daily-card card">
+              <p class="day"></p>
               <div class="daily-icon">Icon</div>
               <div class="high-low">
-                <p class="day-high">28<span>&#176;</span></p>
-                <p class="day-low">19<span>&#176;</span></p>
+                <p class="day-high"></p>
+                <p class="day-low"></p>
               </div>
-              <div class="daily-desc">Clear</div>
+              <div class="daily-desc"></div>
             </div>
-            <div class="daily-card">
-              <p class="day">Saturday</p>
+            <div class="daily-card card">
+              <p class="day"></p>
               <div class="daily-icon">Icon</div>
               <div class="high-low">
-                <p class="day-high">28<span>&#176;</span></p>
-                <p class="day-low">19<span>&#176;</span></p>
+                <p class="day-high"></p>
+                <p class="day-low"></p>
               </div>
-              <div class="daily-desc">Clear</div>
+              <div class="daily-desc"></div>
             </div>
-            <div class="daily-card">
-              <p class="day">Sunday</p>
+            <div class="daily-card card">
+              <p class="day"></p>
               <div class="daily-icon">Icon</div>
               <div class="high-low">
-                <p class="day-high">28<span>&#176;</span></p>
-                <p class="day-low">19<span>&#176;</span></p>
+                <p class="day-high"></p>
+                <p class="day-low"></p>
               </div>
-              <div class="daily-desc">Clear</div>
+              <div class="daily-desc"></div>
             </div>
           </div>
+          <div class="hourly-card-list" style="display: none"></div>
         </div>
         <button class="next-btn">></button>
       </div>
@@ -108,56 +109,56 @@
         <div id="sunrise" class="data-item">
           <div class="flex-left">
             <div class="info-title">Sunrise</div>
-            <div class="info-stat">08:29</div>
+            <div class="info-stat" id="sunriseText"></div>
           </div>
           <div class="stat-icon">icon</div>
         </div>
         <div id="sunset" class="data-item">
           <div class="flex-left">
             <div class="info-title">Sunset</div>
-            <div class="info-stat">17:06</div>
+            <div class="info-stat" id="sunsetText"></div>
           </div>
           <div class="stat-icon">icon</div>
         </div>
         <div id="wind-speed" class="data-item">
           <div class="flex-left">
             <div class="info-title">Wind speed</div>
-            <div class="info-stat">5km/h</div>
+            <div class="info-stat" id="wind-speedText"></div>
           </div>
           <div class="stat-icon">icon</div>
         </div>
         <div id="pressure" class="data-item">
           <div class="flex-left">
             <div class="info-title">Pressure</div>
-            <div class="info-stat">1,035 hPa</div>
+            <div class="info-stat" id="pressureText"></div>
           </div>
           <div class="stat-icon">icon</div>
         </div>
         <div id="visibility" class="data-item">
           <div class="flex-left">
             <div class="info-title">Visibility</div>
-            <div class="info-stat">33km</div>
+            <div class="info-stat" id="visibilityText"></div>
           </div>
           <div class="stat-icon">icon</div>
         </div>
         <div id="humidity" class="data-item">
           <div class="flex-left">
             <div class="info-title">Humidity</div>
-            <div class="info-stat">70%</div>
+            <div class="info-stat" id="humidityText"></div>
           </div>
           <div class="stat-icon">icon</div>
         </div>
         <div id="uv-index" class="data-item">
           <div class="flex-left">
             <div class="info-title">UV index</div>
-            <div class="info-stat">0 of 10</div>
+            <div class="info-stat" id="uv-indexText"></div>
           </div>
           <div class="stat-icon">icon</div>
         </div>
         <div id="wind-dir" class="data-item">
           <div class="flex-left">
             <div class="info-title">Wind direction</div>
-            <div class="info-stat">280&#176;W</div>
+            <div class="info-stat" id="wind-directionText"></div>
           </div>
           <div class="stat-icon">icon</div>
         </div>

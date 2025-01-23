@@ -3,11 +3,12 @@ import { format, parse, addDays } from "date-fns";
 
 import { displayWeatherData } from "./dom";
 
-const userInput = document.getElementById("search-input");
 const btnRequest = document.getElementById("search-btn");
+const userInput = document.getElementById("search-input");
 
 const API_KEY = "9545QA2MGPWNHSND234UFU28K"; // Visual Crossing Public API key
 
+const DEFAULT_LOCATION = "New York, USA";
 let weatherDataCache = null;
 let storedLocation = "";
 
@@ -34,6 +35,7 @@ export async function fetchWeatherData() {
       throw new Error("Weather data not found!");
     }
     const data = await response.json();
+    console.log(data);
     weatherDataCache = organizeData(data); /* Cache the data to prevent future unnecessary API calls 
                                             (especially when switching daily/hourly forecasts) */
 
@@ -209,7 +211,14 @@ export function initFetch() {
 
       await displayWeatherData("Daily"); // Fetch and display the daily data
     }
-
     userInput.value = "";
   });
 }
+
+// Default location when page loads
+document.addEventListener("DOMContentLoaded", () => {
+  if (!storedLocation || storedLocation() === "") {
+    storedLocation = DEFAULT_LOCATION;
+  }
+  displayWeatherData("Daily");
+});

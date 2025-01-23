@@ -31,7 +31,7 @@ body {
 
 .content-wrapper {
   width: 75vw;
-  height: 85vh;
+  height: 80%;
   background-color: var(--bg-content-color);
   border-radius: 60px;
 }
@@ -93,7 +93,7 @@ button#search-btn::before {
 
 #location-name {
   padding-top: 10px;
-  font-size: 2rem;
+  font-size: 1.8rem;
   font-weight: bold;
   outline: 1px solid black;
   width: 100%;
@@ -129,7 +129,7 @@ button#search-btn::before {
 }
 
 /* Degree symbol */
-.degrees span {
+#degrees span {
   font-size: 3rem;
   height: 100%;
   transform: translateX(-5px);
@@ -158,13 +158,13 @@ button#search-btn::before {
 
 #feels-like {
   font-size: 1.1rem;
-  padding-top: 2px;
+  padding-top: 3px;
 }
 
 #time-updated {
   font-size: 1.1rem;
   align-self: center;
-  padding-top: 2px;
+  padding-top: 3px;
 }
 
 /* Forecast switch (daily/hourly) */
@@ -227,8 +227,10 @@ button.next-btn {
   outline: 1px solid black;
 }
 
-.daily-card-list {
-  display: flex;
+/* DAILY CARDS */
+.daily-card-list,
+.hourly-card-list {
+  display: none;
   width: 100%;
   gap: 40px;
   transition: transform 0.5s ease;
@@ -236,21 +238,26 @@ button.next-btn {
 }
 
 /* Card style */
-.daily-card-list div.daily-card {
+.card {
   display: flex;
   flex-direction: column;
   align-items: center;
   outline: 1px solid blue;
   flex: var(--5-card-view);
   border-radius: 30px;
+  cursor: pointer;
+  padding-bottom: 5px;
 }
 
-p.day {
+p.day,
+div.time {
   font-size: 1.8rem;
+  outline: 1px solid red;
 }
 
 /* Icon placeholder */
-.daily-icon {
+.daily-icon,
+.hourly-icon {
   outline: 1px solid red;
   font-size: 1.4rem;
   width: 100px;
@@ -267,21 +274,35 @@ p.day {
 }
 
 .day-high,
-.day-low {
+.day-low,
+.hourly-temp {
   display: flex;
   justify-content: center;
   align-items: center;
+  outline: 1px solid blue;
 }
 
 .day-high span,
-.day-low span {
+.day-low span,
+.hourly-temp span {
   font-size: 1.3rem;
   height: 100%;
   padding-top: 2px;
 }
 
-.daily-desc {
+.daily-desc,
+.hourly-desc {
   font-size: 1.4rem;
+  outline: 1px solid green;
+}
+
+/* HOURLY CARDS */
+div.hourly-temp {
+  font-size: 1.8rem;
+}
+
+.hourly-card-list div.hourly-card {
+  justify-content: space-evenly;
 }
 
 /* SECONDARY DATA (WEATHER) */
@@ -291,18 +312,21 @@ p.day {
   justify-content: center;
   gap: 30px;
   margin-top: 45px;
-  width: 60%;
+  max-width: 900px;
   padding-left: 5px;
   padding-right: 5px;
   flex-wrap: wrap;
   outline: 1px solid purple;
+  margin-bottom: 45px;
 }
 
 .data-item {
   display: flex;
   justify-content: center;
+  align-items: center;
   outline: 1px solid blue;
-  width: 200px;
+  width: clamp(120px, 10vw, 200px);
+  max-height: 80px;
   padding: 15px;
 }
 
