@@ -6,14 +6,14 @@ import { displayWeatherData } from "./dom";
 const btnRequest = document.getElementById("search-btn");
 const userInput = document.getElementById("search-input");
 
-const API_KEY = "9545QA2MGPWNHSND234UFU28K"; // Visual Crossing Public API key
-
 const DEFAULT_LOCATION = "New York, USA";
 let weatherDataCache = null;
 let storedLocation = "";
 
 // Fetch weather data from API
 export async function fetchWeatherData() {
+  const API_KEY = "9545QA2MGPWNHSND234UFU28K"; // Visual Crossing Public API key
+
   const location = storedLocation;
   if (location.trim() === "") return;
 
@@ -52,7 +52,7 @@ export async function fetchWeatherData() {
   }
 }
 
-/* Fetch the city and country names from the API, ensuring the location is returned in English,
+/* Fetch the city and country name from the API, ensuring the location is returned in English,
 even if a foreign country is searched. */
 export async function getLocationDetails(latitude, longitude) {
   const url = `https://us1.locationiq.com/v1/reverse?key=pk.bdcf91109a5cf61e65c8ee8445174854&lat=${latitude}&lon=${longitude}&format=json&`;
@@ -217,7 +217,7 @@ export function initFetch() {
 
 // Default location when page loads
 document.addEventListener("DOMContentLoaded", () => {
-  if (!storedLocation || storedLocation() === "") {
+  if (!storedLocation) {
     storedLocation = DEFAULT_LOCATION;
   }
   displayWeatherData("Daily");

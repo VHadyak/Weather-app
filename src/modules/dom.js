@@ -2,9 +2,14 @@ import { resetSwiperState } from "./swiper";
 import { fetchWeatherData } from "./weatherData";
 
 export let hourlyIsActive = false; // Forecast toggle state
+let isCelsius = true;
+let storedWeatherData = null;
 
 const dailyBtn = document.querySelector(".daily-toggle");
 const hourlyBtn = document.querySelector(".hourly-toggle");
+
+const celsiusBtn = document.querySelector(".cel");
+const fahrenheitBtn = document.querySelector(".fah");
 
 // Main data variables
 const locationName = document.querySelector("#location-name");
@@ -48,19 +53,48 @@ export async function displayWeatherData(forecast, index) {
   const weatherData = await fetchWeatherData();
 
   if (!weatherData) return;
-  const { currentData, weekForecastData, hourlyForecastData } = weatherData;
+  storedWeatherData = weatherData; // Store weather data that was fetched
 
   if (forecast === "Daily") {
-    renderDailyData(currentData, weekForecastData);
+    renderDailyData();
   } else if (forecast === "Hourly") {
-    renderHourlyData(hourlyForecastData);
+    renderHourlyData();
   } else if (forecast === "Day View") {
-    renderSelectedCard(currentData, weekForecastData, index);
+    renderSelectedCard(index);
   }
 }
 
+// Convert between Celsius/Fahrenheit
+function degreesConverter(convertToCelsius, { currentData, weekForecastData, hourlyForecastData }) {
+  // Round to 1 decimal place
+  const round = (num) => Math.round(num * 10) / 10;
+
+  // Celsius/Fahrenheit conversion
+  const convert = (temp) => {
+    return convertToCelsius ? round((5 / 9) * (temp - 32)) : round((9 / 5) * temp + 32);
+  };
+
+  // Update object property values
+  currentData.temperatureHigh = convert(currentData.temperatureHigh);
+  currentData.temperatureLow = convert(currentData.temperatureLow);
+  currentData.temperature = convert(currentData.temperature);
+  currentData.feelsLike = convert(currentData.feelsLike);
+
+  weekForecastData.forEach((day) => {
+    day.temperatureHigh = convert(day.temperatureHigh);
+    day.temperatureLow = convert(day.temperatureLow);
+  });
+
+  hourlyForecastData.forEach((day) => {
+    day.hours.forEach((hour) => {
+      hour.temperature = convert(hour.temperature);
+    });
+  });
+}
+
 // Render individual card's weather data based on user's selection
-function renderSelectedCard(currentData, weekForecastData, index) {
+function renderSelectedCard(index) {
+  const { currentData, weekForecastData } = storedWeatherData;
   let selectedDayData;
 
   if (index === 0) {
@@ -72,9 +106,11 @@ function renderSelectedCard(currentData, weekForecastData, index) {
 }
 
 // Render a week of forecast
-function renderDailyData(currentData, weekForecastData) {
+function renderDailyData(degreeChange = false) {
   dailyCardList.style.display = "flex";
   hourlyCardList.style.display = "none";
+
+  const { currentData, weekForecastData } = storedWeatherData;
 
   //timeUpdated.textContent = `Updated on: ${}`;
   const dailyCards = document.querySelectorAll(".daily-card");
@@ -88,31 +124,38 @@ function renderDailyData(currentData, weekForecastData) {
 
     if (index === 0) {
       // Main data DOM
-      locationName.textContent = currentData.location;
+      if (!degreeChange) {
+        locationName.textContent = currentData.location;
+        conditionDesc.textContent = currentData.condition;
+
+        // DOM for today
+        cardTitle.textContent = currentData.day;
+        desc.textContent = currentData.condition;
+
+        // Secondary data
+        updateWeatherDetails(currentData);
+      }
+
+      feelsLike.textContent = `Feels like: ${currentData.feelsLike}°`;
       temperature.textContent = currentData.temperature;
+      dayH.textContent = currentData.temperatureHigh;
+      dayL.textContent = currentData.temperatureLow;
+
       degreeSymbol.textContent = "°";
       temperature.appendChild(degreeSymbol);
-      conditionDesc.textContent = currentData.condition;
-      feelsLike.textContent = `Feels like: ${currentData.feelsLike}`;
-
-      // DOM for today
-      cardTitle.textContent = currentData.day;
-      dayL.textContent = currentData.temperatureHigh;
-      dayH.textContent = currentData.temperatureLow;
-      desc.textContent = currentData.condition;
-
-      // Secondary data
-      updateWeatherDetails(currentData);
     } else {
       // Adjust the index of weekData with card index
       // since weekData doesn't account today's day
       const day = weekForecastData[index - 1];
 
       // DOM for rest of the week
-      cardTitle.textContent = day.day;
+      if (!degreeChange) {
+        cardTitle.textContent = day.day;
+        desc.textContent = day.condition;
+      }
+
       dayH.textContent = day.temperatureHigh;
       dayL.textContent = day.temperatureLow;
-      desc.textContent = day.condition;
     }
   });
 
@@ -162,17 +205,24 @@ function generateHourlyCards() {
 }
 
 // Render hourly forecast
-function renderHourlyData(hourlyData) {
+function renderHourlyData(degreeChange = false) {
   dailyCardList.style.display = "none";
   hourlyCardList.style.display = "flex";
+
+  const { currentData, hourlyForecastData } = storedWeatherData;
 
   const hourlyCards = document.querySelectorAll(".hourly-card");
 
   // Combine hours of today with tomorrow's hours
-  const combineHours = hourlyData.reduce((total, day) => {
+  const combineHours = hourlyForecastData.reduce((total, day) => {
     const joinedArr = total.concat(day.hours);
     return joinedArr; // Array of 24 hours
   }, []);
+
+  temperature.textContent = currentData.temperature;
+  feelsLike.textContent = `Feels like: ${currentData.feelsLike}°`;
+  degreeSymbol.textContent = "°";
+  temperature.appendChild(degreeSymbol);
 
   hourlyCards.forEach((card, index) => {
     const hour = combineHours[index];
@@ -181,9 +231,11 @@ function renderHourlyData(hourlyData) {
     const temp = card.querySelector(".hourly-temp");
     const desc = card.querySelector(".hourly-desc");
 
-    title.textContent = hour.time;
+    if (!degreeChange) {
+      title.textContent = hour.time;
+      desc.textContent = hour.condition;
+    }
     temp.textContent = hour.temperature;
-    desc.textContent = hour.condition;
   });
 
   const temp = document.querySelectorAll(".hourly-temp");
@@ -196,7 +248,7 @@ function renderHourlyData(hourlyData) {
     t.appendChild(degreeSym);
   });
 
-  console.log("hourly:", hourlyData);
+  console.log("hourly:", hourlyForecastData);
 }
 
 // DOM Events
@@ -204,7 +256,6 @@ dailyBtn.addEventListener("click", () => {
   if (hourlyIsActive) {
     hourlyIsActive = false;
     displayWeatherData("Daily");
-    console.log(hourlyIsActive);
     resetSwiperState();
   }
 });
@@ -213,7 +264,6 @@ hourlyBtn.addEventListener("click", () => {
   if (!hourlyIsActive) {
     hourlyIsActive = true;
     displayWeatherData("Hourly");
-    console.log(hourlyIsActive);
     resetSwiperState();
   }
 });
@@ -224,10 +274,30 @@ dailyCards.forEach((card, index) => {
   });
 });
 
+celsiusBtn.addEventListener("click", () => {
+  if (!isCelsius) {
+    isCelsius = true;
+    degreesConverter(true, storedWeatherData); //convert to Celsius
+
+    // Prevent for degree buttons to switch daily/hourly tabs
+    return hourlyIsActive ? renderHourlyData(true) : renderDailyData(true);
+  }
+});
+
+fahrenheitBtn.addEventListener("click", () => {
+  if (isCelsius) {
+    isCelsius = false;
+    degreesConverter(false, storedWeatherData); // convert to Fahrenheit
+
+    return hourlyIsActive ? renderHourlyData(true) : renderDailyData(true);
+  }
+});
+
 // Reset state after search
 const btnReq = document.querySelector("#search-btn");
 btnReq.addEventListener("click", () => {
   hourlyIsActive = false;
+  isCelsius = true;
   resetSwiperState();
 });
 
