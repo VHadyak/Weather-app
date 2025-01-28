@@ -1,6 +1,13 @@
 import SunCalc from "suncalc"; // Library for calculating sun's position
 import { format, parse, addDays } from "date-fns";
 
+// Import weather icons
+import partlyCloudyDay from "../assets/images/partlyCloudyDay.gif";
+import rain from "../assets/images/Rain.gif";
+import snow from "../assets/images/Snow.gif";
+import overcast from "../assets/images/Overcast.gif";
+import clearDay from "../assets/images/clearDay.gif";
+
 import { displayWeatherData } from "./dom";
 
 const btnRequest = document.getElementById("search-btn");
@@ -22,8 +29,8 @@ export async function fetchWeatherData() {
 
   const url =
     `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${location}` +
-    `?unitGroup=metric&elements=datetime%2Cname%2Caddress%2Clatitude%2Clongitude%2Ctempmax%2Ctempmin%2Ctemp%2Cfeelslike%2Cdew%2Chumidity%2Cprecip%2Cprecipprob%2Cpreciptype%2Csnow%2Csnowdepth%2Cwindspeed%2Cwindspeedmean%2Cwinddir%2Cpressure%2Ccloudcover%2Cvisibility%2Csolarradiation%2Csolarenergy%2Cuvindex%2Csunrise%2Csunset%2Cconditions%2Cdescription%2Csunelevation` +
-    `&key=${API_KEY}&contentType=json`;
+    `?unitGroup=metric&elements=datetime%2Cname%2Caddress%2Clatitude%2Clongitude%2Ctempmax%2Ctempmin%2Ctemp%2Cfeelslike%2Cdew%2Chumidity%2Cwindspeed%2Cwindspeedmean%2Cwinddir%2Cpressure%2Ccloudcover%2Cvisibility%2Csolarradiation%2Csolarenergy%2Cuvindex%2Csunrise%2Csunset%2Cconditions%2Cdescription%2Csunelevation` +
+    `&lang=id&key=${API_KEY}&contentType=json`;
 
   try {
     const response = await fetch(url, { mode: "cors" });
@@ -34,6 +41,7 @@ export async function fetchWeatherData() {
       }
       throw new Error("Weather data not found!");
     }
+
     const data = await response.json();
     console.log(data);
     weatherDataCache = organizeData(data); /* Cache the data to prevent future unnecessary API calls 
@@ -79,8 +87,42 @@ export async function getLocationDetails(latitude, longitude) {
 }
 
 // Return fallback value if value is undefined or null
-function def(value, fallback = "N/A") {
-  return value != null ? value : fallback;
+function def(val, fallback = "N/A") {
+  return val != null ? val : fallback;
+}
+
+// Use condition IDs to ensure compatibility with future updates to the Weather API,
+// ...condition descriptions may change over time.
+const conditionIDs = {
+  type_42: {
+    condition: "Partly Cloudy",
+    imgURL: partlyCloudyDay,
+  },
+  type_21: {
+    condition: "Rain",
+    imgURL: rain,
+  },
+  type_31: {
+    condition: "Snow",
+    imgURL: snow,
+  },
+  type_41: {
+    condition: "Overcast",
+    imgURL: overcast,
+  },
+  type_43: {
+    condition: "Clear",
+    imgURL: clearDay,
+  },
+};
+
+// If there multiple types within a condition property provided by API,
+// ... such as ("type_21", "type_31", "type_42") select only the first one on the list
+function getFirstCondition(conditions) {
+  const conditionArr = conditions.split(",").map((condition) => condition.trim()); // Convert into array of conditions
+  const firstCondition = conditionArr[0]; // Select only the first condition
+
+  return conditionIDs[firstCondition];
 }
 
 // Process and structure raw data from API into objects (metric)
@@ -104,6 +146,7 @@ function organizeData(data) {
 
   const hoursLeftToday = 24 - tzTime;
 
+  // Timezone date
   const dateFormat = new Intl.DateTimeFormat("en-US", {
     timeZone: timezone,
     timeZoneName: "short",
@@ -112,7 +155,7 @@ function organizeData(data) {
   const formatted = dateFormat.format(currentDate);
   const datePart = formatted.split(",")[0]; // Extract date part
   const parsedDate = parse(datePart, "M/d/yyyy", new Date()); // Parse the date string into a Date object
-  const formattedDate = format(parsedDate, "yyyy-MM-dd"); // Format the date into "yyyy-MM-dd"
+  const formattedDate = format(parsedDate, "yyyy-MM-dd"); // Format the date into "yyyy-MM-dd" (current date based on location)
   const tomorrowDate = addDays(parsedDate, 1);
   const tomorrow = format(tomorrowDate, "yyyy-MM-dd");
 
@@ -121,13 +164,16 @@ function organizeData(data) {
   const longitude = data.longitude;
   const today = data.days[0];
 
+  const firstCondition = getFirstCondition(currentConditions.conditions);
+
   // DATA FOR TODAY
   const currentData = {
     day: "Today",
     temperature: currentConditions.temp, // celsius
     temperatureHigh: today.tempmax,
     temperatureLow: today.tempmin,
-    condition: currentConditions.conditions,
+    condition: firstCondition.condition,
+    conditionImg: firstCondition.imgURL,
     feelsLike: currentConditions.feelslike,
     sunrise: currentConditions.sunrise,
     sunset: currentConditions.sunset,
@@ -148,12 +194,15 @@ function organizeData(data) {
   // DATA FOR THE NEXT 6 DAYS
   const weekForecastData = weekForecast.map((day) => {
     const date = new Date(day.datetime); // Convert string date into Date object
+    const firstCondition = getFirstCondition(day.conditions);
+
     return {
       date: day.datetime,
       day: daysOfWeek[date.getDay()], // Day of the week
       temperatureHigh: day.tempmax,
       temperatureLow: day.tempmin,
-      condition: day.conditions,
+      condition: firstCondition.condition,
+      conditionImg: firstCondition.imgURL,
       feelslike: day.feelslike,
       sunrise: day.sunrise,
       sunset: day.sunset,
@@ -192,7 +241,8 @@ function organizeData(data) {
           // Set to 'Now' for current time
           isToday && new Date(`${formattedDate}T${hour.datetime}`).getHours() === tzTime ? "Now" : hour.datetime,
         temperature: hour.temp,
-        condition: hour.conditions,
+        condition: getFirstCondition(hour.conditions).condition,
+        conditionImg: getFirstCondition(hour.conditions).imgURL,
       })),
     };
   });

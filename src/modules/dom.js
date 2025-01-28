@@ -16,6 +16,7 @@ const locationName = document.querySelector("#location-name");
 const temperature = document.querySelector("#degrees");
 const degreeSymbol = document.createElement("span");
 const conditionDesc = document.querySelector("#condition-desc");
+const conditionIcon = document.querySelector("#condition-icon");
 const feelsLike = document.querySelector("#feels-like");
 //const timeUpdated = document.querySelector("#time-updated");
 
@@ -121,16 +122,19 @@ function renderDailyData(degreeChange = false) {
     const dayL = dayLow[index];
     const dayH = dayHigh[index];
     const desc = card.querySelector(".daily-desc");
+    const conditionImg = card.querySelector(".daily-icon");
 
     if (index === 0) {
       // Main data DOM
       if (!degreeChange) {
         locationName.textContent = currentData.location;
         conditionDesc.textContent = currentData.condition;
+        conditionIcon.src = currentData.conditionImg;
 
         // DOM for today
         cardTitle.textContent = currentData.day;
         desc.textContent = currentData.condition;
+        conditionImg.src = currentData.conditionImg;
 
         // Secondary data
         updateWeatherDetails(currentData);
@@ -152,6 +156,7 @@ function renderDailyData(degreeChange = false) {
       if (!degreeChange) {
         cardTitle.textContent = day.day;
         desc.textContent = day.condition;
+        conditionImg.src = day.conditionImg;
       }
 
       dayH.textContent = day.temperatureHigh;
@@ -183,7 +188,7 @@ function generateHourlyCards() {
   for (let i = 0; i < 24; i++) {
     const hourlyCard = document.createElement("div");
     const time = document.createElement("div");
-    const hrIcon = document.createElement("div");
+    const hrIcon = document.createElement("img");
     const hrTemp = document.createElement("div");
     const hrDesc = document.createElement("div");
     const degreeSpan = document.createElement("span");
@@ -191,6 +196,7 @@ function generateHourlyCards() {
     hourlyCard.classList.add("hourly-card");
     hourlyCard.classList.add("card");
     time.classList.add("time");
+    hrIcon.setAttribute("src", "#");
     hrIcon.classList.add("hourly-icon");
     hrTemp.classList.add("hourly-temp");
     hrDesc.classList.add("hourly-desc");
@@ -230,10 +236,12 @@ function renderHourlyData(degreeChange = false) {
     const title = card.querySelector(".time");
     const temp = card.querySelector(".hourly-temp");
     const desc = card.querySelector(".hourly-desc");
+    const conditionImg = card.querySelector(".hourly-icon");
 
     if (!degreeChange) {
       title.textContent = hour.time;
       desc.textContent = hour.condition;
+      conditionImg.src = hour.conditionImg;
     }
     temp.textContent = hour.temperature;
   });
@@ -248,7 +256,7 @@ function renderHourlyData(degreeChange = false) {
     t.appendChild(degreeSym);
   });
 
-  console.log("hourly:", hourlyForecastData);
+  //console.log("hourly:", hourlyForecastData);
 }
 
 // DOM Events

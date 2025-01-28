@@ -30,8 +30,8 @@ body {
 }
 
 .content-wrapper {
-  width: 75vw;
-  height: 80%;
+  width: 72vw;
+  height: 85vh;
   background-color: var(--bg-content-color);
   border-radius: 60px;
 }
@@ -106,16 +106,17 @@ button#search-btn::before {
   display: flex;
   justify-content: center;
   width: 100%;
-  padding-right: 40px;
   gap: var(--degree-wrapper-gap);
 }
 
-#condition-icon {
+img#condition-icon {
   outline: 2px solid green;
   display: flex;
   justify-content: center;
   align-items: center;
   font-size: 3rem;
+  width: 120px;
+  margin-left: -90px;
 }
 
 #degrees {
@@ -132,16 +133,15 @@ button#search-btn::before {
 #degrees span {
   font-size: 3rem;
   height: 100%;
-  transform: translateX(-5px);
+
   padding-top: 7px;
 }
 
 .degrees-unit {
   display: flex;
   flex-direction: column;
-  padding-top: 11px;
+  padding-top: 12px;
   outline: 1px solid green;
-  transform: translateX(calc(0px - var(--degree-wrapper-gap)));
 }
 
 .degrees-unit button {
@@ -194,7 +194,7 @@ button#search-btn::before {
 .main-slider-wrapper {
   display: flex;
   justify-content: center;
-  gap: 30px;
+  gap: 40px;
   outline: 1px solid red;
   margin-top: 20px;
 }
@@ -256,8 +256,8 @@ div.time {
 }
 
 /* Icon placeholder */
-.daily-icon,
-.hourly-icon {
+img.daily-icon,
+img.hourly-icon {
   outline: 1px solid red;
   font-size: 1.4rem;
   width: 100px;
@@ -313,6 +313,7 @@ div.hourly-temp {
   gap: 30px;
   margin-top: 45px;
   max-width: 900px;
+  height: 190px;
   padding-left: 5px;
   padding-right: 5px;
   flex-wrap: wrap;
@@ -346,12 +347,49 @@ div.data-item div.info-stat {
 }
 
 .stat-icon {
-  display: flex;
-  justify-content: center;
-  align-items: center;
   outline: 3px solid green;
   height: 100%;
   width: 30%;
+}
+
+.sunrise {
+  background: url(../assets/images/sunrise.svg);
+  background-size: cover;
+}
+
+.sunset {
+  background: url(../assets/images/sunset.svg);
+  background-size: cover;
+}
+
+.wind-speed {
+  background: url(../assets/images/windSpeed.svg);
+  background-size: cover;
+}
+
+.pressure {
+  background: url(../assets/images/pressure.svg);
+  background-size: cover;
+}
+
+.visibility {
+  background: url(../assets/images/visibility.svg);
+  background-size: cover;
+}
+
+.humidity {
+  background: url(../assets/images/humidity.svg);
+  background-size: cover;
+}
+
+.uv-index {
+  background: url(../assets/images/uvIndex.svg);
+  background-size: cover;
+}
+
+.wind-dir {
+  background: url(../assets/images/windDirection.svg);
+  background-size: cover;
 }
 
 /* Remove 'x' on search input */
