@@ -18,7 +18,6 @@ const degreeSymbol = document.createElement("span");
 const conditionDesc = document.querySelector("#condition-desc");
 const conditionIcon = document.querySelector("#condition-icon");
 const feelsLike = document.querySelector("#feels-like");
-//const timeUpdated = document.querySelector("#time-updated");
 
 const dailyCardList = document.querySelector(".daily-card-list");
 const hourlyCardList = document.querySelector(".hourly-card-list");
@@ -113,7 +112,6 @@ function renderDailyData(degreeChange = false) {
 
   const { currentData, weekForecastData } = storedWeatherData;
 
-  //timeUpdated.textContent = `Updated on: ${}`;
   const dailyCards = document.querySelectorAll(".daily-card");
 
   // Rest of week data DOM

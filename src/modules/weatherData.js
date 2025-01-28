@@ -12,6 +12,7 @@ import { displayWeatherData } from "./dom";
 
 const btnRequest = document.getElementById("search-btn");
 const userInput = document.getElementById("search-input");
+const timeUpdated = document.querySelector("#time-updated");
 
 const DEFAULT_LOCATION = "New York, USA";
 let weatherDataCache = null;
@@ -43,6 +44,13 @@ export async function fetchWeatherData() {
     }
 
     const data = await response.json();
+
+    // Update time after weather data has been fetched
+    if (timeUpdated) {
+      const time = format(new Date(), "HH:mm");
+      timeUpdated.textContent = `Updated on: ${time}`;
+    }
+
     console.log(data);
     weatherDataCache = organizeData(data); /* Cache the data to prevent future unnecessary API calls 
                                             (especially when switching daily/hourly forecasts) */
@@ -59,6 +67,8 @@ export async function fetchWeatherData() {
     console.log("Error fetching weather data!", err.message);
   }
 }
+
+setInterval(fetchWeatherData, 600000); // Update every 10 minutes
 
 /* Fetch the city and country name from the API, ensuring the location is returned in English,
 even if a foreign country is searched. */
