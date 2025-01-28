@@ -93,7 +93,7 @@ function degreesConverter(convertToCelsius, { currentData, weekForecastData, hou
 }
 
 // Render individual card's weather data based on user's selection
-function renderSelectedCard(index) {
+export function renderSelectedCard(index = 0) {
   const { currentData, weekForecastData } = storedWeatherData;
   let selectedDayData;
 

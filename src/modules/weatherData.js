@@ -16,6 +16,8 @@ const timeUpdated = document.querySelector("#time-updated");
 
 const DEFAULT_LOCATION = "New York, USA";
 let weatherDataCache = null;
+let lastUpdatedTime = null;
+let updateInterval;
 let storedLocation = "";
 
 // Fetch weather data from API
@@ -25,8 +27,18 @@ export async function fetchWeatherData() {
   const location = storedLocation;
   if (location.trim() === "") return;
 
-  // If data is already cached, return it, to avoid making another API call
-  if (weatherDataCache) return weatherDataCache;
+  // Assign updated time
+  if (timeUpdated) {
+    const time = format(new Date(), "HH:mm");
+    timeUpdated.textContent = `Updated on: ${time}`;
+  }
+
+  const currentTime = new Date();
+
+  // Return cached data if it's less than 10 minutes, else make an API call
+  if (weatherDataCache && lastUpdatedTime && currentTime - lastUpdatedTime < 597000) {
+    return weatherDataCache;
+  }
 
   const url =
     `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${location}` +
@@ -44,16 +56,13 @@ export async function fetchWeatherData() {
     }
 
     const data = await response.json();
-
-    // Update time after weather data has been fetched
-    if (timeUpdated) {
-      const time = format(new Date(), "HH:mm");
-      timeUpdated.textContent = `Updated on: ${time}`;
-    }
-
-    console.log(data);
     weatherDataCache = organizeData(data); /* Cache the data to prevent future unnecessary API calls 
                                             (especially when switching daily/hourly forecasts) */
+    console.log(data);
+    lastUpdatedTime = currentTime;
+    console.log(weatherDataCache.currentData.temperature);
+    console.log(weatherDataCache.currentData.windSpeed);
+    console.log(weatherDataCache.currentData.windDirection);
 
     const { locality, country } = await getLocationDetails(data.latitude, data.longitude);
 
@@ -67,8 +76,6 @@ export async function fetchWeatherData() {
     console.log("Error fetching weather data!", err.message);
   }
 }
-
-setInterval(fetchWeatherData, 600000); // Update every 10 minutes
 
 /* Fetch the city and country name from the API, ensuring the location is returned in English,
 even if a foreign country is searched. */
@@ -260,6 +267,12 @@ function organizeData(data) {
 }
 
 export function initFetch() {
+  if (updateInterval) clearInterval(updateInterval); // Avoid interval overlap
+
+  updateInterval = setInterval(() => {
+    displayWeatherData("Daily");
+  }, 600000);
+
   btnRequest.addEventListener("click", async (e) => {
     e.preventDefault();
 
