@@ -20,24 +20,33 @@ let weatherDataCache = null;
 let delay = null;
 let updateInterval;
 let storedLocation = "";
+let lastFetchedLocation = "";
 
 // Fetch weather data from API
 export async function fetchWeatherData() {
   const API_KEY = "XWA4EXKWMGLN7FVV49JWDSY92"; // Visual Crossing Public API key
 
-  const location = storedLocation;
-  if (location.trim() === "") return;
-
   // Update time
   if (timeUpdated) {
     const time = format(new Date(), "HH:mm");
     timeUpdated.textContent = `Updated on: ${time}`;
+    console.log(time);
   }
+
+  const location = storedLocation;
+  if (location.trim() === "") return;
+
+  /*
+  if (location === lastFetchedLocation) {
+    // If same location fetched consecutively, return a cache
+    return weatherDataCache;
+  }
+  lastFetchedLocation = location; */
 
   const currentTime = new Date(); // Before fetch
 
-  // Return cached data if it's less than 10 minutes old (adjusted for slight timing drift), else make an API call
-  if (weatherDataCache && delay && currentTime - delay < 600000 - 5) {
+  // Return cached data if it's less than 10 minutes old (also adjusted for slight timing drift), else make an API call
+  if (weatherDataCache && delay && currentTime - delay < 20000 - 5) {
     return weatherDataCache;
   }
 
@@ -63,9 +72,9 @@ export async function fetchWeatherData() {
     console.log(data);
     delay = currentTime; // After fetch
 
-    //console.log(weatherDataCache.currentData.temperature);
-    //console.log(weatherDataCache.currentData.windSpeed);
-    //console.log(weatherDataCache.currentData.windDirection);
+    console.log(weatherDataCache.currentData.temperature);
+    console.log(weatherDataCache.currentData.windSpeed);
+    console.log(weatherDataCache.currentData.windDirection);
 
     const { locality, country } = await getLocationDetails(data.latitude, data.longitude);
 
@@ -272,22 +281,37 @@ function organizeData(data) {
 }
 
 export function initFetch() {
-  if (updateInterval) clearInterval(updateInterval); // Avoid interval overlap
+  // Schedule a recurring fetch every 10 minutes
+  const scheduleFetch = () => {
+    if (updateInterval) clearInterval(updateInterval); // Clear interval to avoid interval overlap
 
-  updateInterval = setInterval(() => {
-    displayWeatherData("Daily");
-  }, 600000);
+    updateInterval = setInterval(() => {
+      displayWeatherData("Daily");
+    }, 20000);
+  };
+
+  scheduleFetch();
 
   btnRequest.addEventListener("click", async (e) => {
+    if (updateInterval) clearInterval(updateInterval);
     e.preventDefault();
 
     const location = userInput.value.trim();
+
     if (location !== "") {
-      storedLocation = location; // Store the location
+      storedLocation = location;
       weatherDataCache = null; // Clear previous cache
 
+      updateInterval = setInterval(() => {
+        displayWeatherData("Daily");
+      }, 20000);
+
       await displayWeatherData("Daily"); // Fetch and display the daily data
+
+      // After search data is fetched, schedule the next fetch in 10 minutes
+      scheduleFetch();
     }
+
     userInput.value = "";
   });
 }
