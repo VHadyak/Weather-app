@@ -36,19 +36,20 @@ export async function fetchWeatherData() {
   const location = storedLocation;
   if (location.trim() === "") return;
 
-  /*
-  if (location === lastFetchedLocation) {
-    // If same location fetched consecutively, return a cache
-    return weatherDataCache;
-  }
-  lastFetchedLocation = location; */
-
   const currentTime = new Date(); // Before fetch
 
-  // Return cached data if it's less than 10 minutes old (also adjusted for slight timing drift), else make an API call
-  if (weatherDataCache && delay && currentTime - delay < 20000 - 5) {
+  // Return cached data if:
+  // 1. cached data exists and less than 10 minutes old (also adjusted for slight timing drift)
+  // 2. or same location has been searched consecutively and less than 10 minutes old
+  // else, make an API call to fetch new data
+  if (
+    (weatherDataCache && delay && currentTime - delay < 600000 - 5) ||
+    (location === lastFetchedLocation && delay && currentTime - delay < 600000 - 5)
+  ) {
     return weatherDataCache;
   }
+
+  lastFetchedLocation = location;
 
   const url =
     `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${location}` +
@@ -72,9 +73,9 @@ export async function fetchWeatherData() {
     console.log(data);
     delay = currentTime; // After fetch
 
-    console.log(weatherDataCache.currentData.temperature);
-    console.log(weatherDataCache.currentData.windSpeed);
-    console.log(weatherDataCache.currentData.windDirection);
+    //console.log(weatherDataCache.currentData.temperature);
+    //console.log(weatherDataCache.currentData.windSpeed);
+    //console.log(weatherDataCache.currentData.windDirection);
 
     const { locality, country } = await getLocationDetails(data.latitude, data.longitude);
 
@@ -287,7 +288,7 @@ export function initFetch() {
 
     updateInterval = setInterval(() => {
       displayWeatherData("Daily");
-    }, 20000);
+    }, 600000);
   };
 
   scheduleFetch();
@@ -301,10 +302,6 @@ export function initFetch() {
     if (location !== "") {
       storedLocation = location;
       weatherDataCache = null; // Clear previous cache
-
-      updateInterval = setInterval(() => {
-        displayWeatherData("Daily");
-      }, 20000);
 
       await displayWeatherData("Daily"); // Fetch and display the daily data
 
