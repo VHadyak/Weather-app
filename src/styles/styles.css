@@ -393,10 +393,15 @@ div.data-item div.info-stat {
 }
 
 .spinner {
+  position: absolute;
+  margin-left: auto;
+  margin-right: auto;
+  left: 0;
+  right: 0;
   height: 120px;
   width: 120px;
   border: 6px solid;
-  border-color: white transparent white transparent;
+  border-color: rgb(159, 155, 155) transparent rgb(152, 149, 149) transparent;
   border-radius: 50%;
   animation: spin 1.3s ease infinite;
 }

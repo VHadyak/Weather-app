@@ -1,12 +1,18 @@
-export default function loader(loading) {
+export default function loader(isLoading) {
   const contentWrapper = document.querySelector(".content-wrapper");
+  const childrenArray = Array.from(contentWrapper.children);
+
   const spinner = document.querySelector(".spinner");
 
-  if (loading) {
+  if (isLoading) {
     spinner.style.display = "block";
-    contentWrapper.style.display = "none";
+    childrenArray.forEach((child) => {
+      child.style.display = "none";
+    });
   } else {
+    childrenArray.forEach((child) => {
+      child.style.display = "flex";
+    });
     spinner.style.display = "none";
-    contentWrapper.style.display = "block";
   }
 }
