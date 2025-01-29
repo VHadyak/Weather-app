@@ -8,6 +8,7 @@ import snow from "../assets/images/Snow.gif";
 import overcast from "../assets/images/Overcast.gif";
 import clearDay from "../assets/images/clearDay.gif";
 
+import useLoader from "./loader.js";
 import { displayWeatherData } from "./dom";
 
 const btnRequest = document.getElementById("search-btn");
@@ -46,6 +47,7 @@ export async function fetchWeatherData() {
     `&lang=id&key=${API_KEY}&contentType=json`;
 
   try {
+    useLoader(true);
     const response = await fetch(url, { mode: "cors" });
 
     if (!response.ok) {
@@ -75,6 +77,8 @@ export async function fetchWeatherData() {
     return weatherDataCache;
   } catch (err) {
     console.log("Error fetching weather data!", err.message);
+  } finally {
+    useLoader(false);
   }
 }
 
@@ -278,7 +282,6 @@ export function initFetch() {
     e.preventDefault();
 
     const location = userInput.value.trim();
-
     if (location !== "") {
       storedLocation = location; // Store the location
       weatherDataCache = null; // Clear previous cache
