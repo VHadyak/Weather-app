@@ -16,27 +16,27 @@ const timeUpdated = document.querySelector("#time-updated");
 
 const DEFAULT_LOCATION = "New York, USA";
 let weatherDataCache = null;
-let lastUpdatedTime = null;
+let delay = null;
 let updateInterval;
 let storedLocation = "";
 
 // Fetch weather data from API
 export async function fetchWeatherData() {
-  const API_KEY = "9545QA2MGPWNHSND234UFU28K"; // Visual Crossing Public API key
+  const API_KEY = "XWA4EXKWMGLN7FVV49JWDSY92"; // Visual Crossing Public API key
 
   const location = storedLocation;
   if (location.trim() === "") return;
 
-  // Assign updated time
+  // Update time
   if (timeUpdated) {
     const time = format(new Date(), "HH:mm");
     timeUpdated.textContent = `Updated on: ${time}`;
   }
 
-  const currentTime = new Date();
+  const currentTime = new Date(); // Before fetch
 
-  // Return cached data if it's less than 10 minutes, else make an API call
-  if (weatherDataCache && lastUpdatedTime && currentTime - lastUpdatedTime < 597000) {
+  // Return cached data if it's less than 10 minutes old (adjusted for slight timing drift), else make an API call
+  if (weatherDataCache && delay && currentTime - delay < 600000 - 5) {
     return weatherDataCache;
   }
 
@@ -59,10 +59,11 @@ export async function fetchWeatherData() {
     weatherDataCache = organizeData(data); /* Cache the data to prevent future unnecessary API calls 
                                             (especially when switching daily/hourly forecasts) */
     console.log(data);
-    lastUpdatedTime = currentTime;
-    console.log(weatherDataCache.currentData.temperature);
-    console.log(weatherDataCache.currentData.windSpeed);
-    console.log(weatherDataCache.currentData.windDirection);
+    delay = currentTime; // After fetch
+
+    //console.log(weatherDataCache.currentData.temperature);
+    //console.log(weatherDataCache.currentData.windSpeed);
+    //console.log(weatherDataCache.currentData.windDirection);
 
     const { locality, country } = await getLocationDetails(data.latitude, data.longitude);
 
