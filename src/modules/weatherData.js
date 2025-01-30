@@ -15,16 +15,15 @@ const btnRequest = document.getElementById("search-btn");
 const userInput = document.getElementById("search-input");
 const timeUpdated = document.querySelector("#time-updated");
 
-const DEFAULT_LOCATION = "New York, USA";
+const DEFAULT_LOCATION = "New York";
 let weatherDataCache = null;
 let delay = null;
 let updateInterval;
 let storedLocation = "";
-let lastFetchedLocation = "";
 
 // Fetch weather data from API
 export async function fetchWeatherData() {
-  const API_KEY = "XWA4EXKWMGLN7FVV49JWDSY92"; // Visual Crossing Public API key
+  const API_KEY = "PWRKRB23SCPW8R3SFPJ57KBNK"; // Visual Crossing Public API key
 
   // Update time
   if (timeUpdated) {
@@ -39,17 +38,11 @@ export async function fetchWeatherData() {
   const currentTime = new Date(); // Before fetch
 
   // Return cached data if:
-  // 1. cached data exists and less than 10 minutes old (also adjusted for slight timing drift)
-  // 2. or same location has been searched consecutively and less than 10 minutes old
+  // cached data exists and less than 10 minutes old (also adjusted for slight timing drift)
   // else, make an API call to fetch new data
-  if (
-    (weatherDataCache && delay && currentTime - delay < 600000 - 5) ||
-    (location === lastFetchedLocation && delay && currentTime - delay < 600000 - 5)
-  ) {
+  if (weatherDataCache && delay && currentTime - delay < 600000 - 5) {
     return weatherDataCache;
   }
-
-  lastFetchedLocation = location;
 
   const url =
     `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${location}` +
@@ -73,9 +66,9 @@ export async function fetchWeatherData() {
     console.log(data);
     delay = currentTime; // After fetch
 
-    //console.log(weatherDataCache.currentData.temperature);
-    //console.log(weatherDataCache.currentData.windSpeed);
-    //console.log(weatherDataCache.currentData.windDirection);
+    console.log(weatherDataCache.currentData.temperature);
+    console.log(weatherDataCache.currentData.windSpeed);
+    console.log(weatherDataCache.currentData.windDirection);
 
     const { locality, country } = await getLocationDetails(data.latitude, data.longitude);
 
@@ -299,15 +292,26 @@ export function initFetch() {
 
     const location = userInput.value.trim();
 
-    if (location !== "") {
-      storedLocation = location;
-      weatherDataCache = null; // Clear previous cache
-
-      await displayWeatherData("Daily"); // Fetch and display the daily data
-
-      // After search data is fetched, schedule the next fetch in 10 minutes
+    // If same location has been searched consecutively, return that cached data without API call
+    // or if default location has been searched after default location has been rendered, return the cached data
+    if (
+      (location === storedLocation && weatherDataCache) ||
+      (location.toLowerCase() === storedLocation.toLowerCase() &&
+        storedLocation.toLowerCase() === DEFAULT_LOCATION.toLowerCase() &&
+        weatherDataCache)
+    ) {
+      userInput.value = "";
       scheduleFetch();
+      return;
     }
+
+    storedLocation = location;
+    weatherDataCache = null; // Clear previous cache
+
+    await displayWeatherData("Daily"); // Fetch and display the daily data
+
+    // After search data is fetched, schedule the next fetch in 10 minutes
+    scheduleFetch();
 
     userInput.value = "";
   });
