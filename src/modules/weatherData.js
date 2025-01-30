@@ -3,10 +3,12 @@ import { format, parse, addDays } from "date-fns";
 
 // Import weather icons
 import partlyCloudyDay from "../assets/images/partlyCloudyDay.gif";
+import partlyCloudyNight from "../assets/images/partlyCloudyNight.gif";
 import rain from "../assets/images/Rain.gif";
 import snow from "../assets/images/Snow.gif";
 import overcast from "../assets/images/Overcast.gif";
 import clearDay from "../assets/images/clearDay.gif";
+import clearNight from "../assets/images/clearNight.gif";
 
 import useLoader from "./loader.js";
 import { displayWeatherData } from "./dom";
@@ -122,6 +124,7 @@ const conditionIDs = {
   type_42: {
     condition: "Partly Cloudy",
     imgURL: partlyCloudyDay,
+    imgURLNight: partlyCloudyNight,
   },
   type_21: {
     condition: "Rain",
@@ -138,6 +141,7 @@ const conditionIDs = {
   type_43: {
     condition: "Clear",
     imgURL: clearDay,
+    imgURLNight: clearNight,
   },
 };
 
@@ -199,6 +203,7 @@ function organizeData(data) {
     temperatureLow: today.tempmin,
     condition: firstCondition.condition,
     conditionImg: firstCondition.imgURL,
+    conditionImgNight: firstCondition.imgURLNight,
     feelsLike: currentConditions.feelslike,
     sunrise: currentConditions.sunrise,
     sunset: currentConditions.sunset,
@@ -212,7 +217,8 @@ function organizeData(data) {
     // Use this for background transition change based on time of day
     get sunElevation() {
       const sunPosition = SunCalc.getPosition(currentDate, latitude, longitude);
-      return (sunPosition.altitude * 180) / Math.PI; // Convert from radians to degrees
+      const elevation = (sunPosition.altitude * 180) / Math.PI; // Convert from radians to degrees
+      return Math.round(elevation * 10) / 10;
     },
   };
 
@@ -266,8 +272,10 @@ function organizeData(data) {
           // Set to 'Now' for current time
           isToday && new Date(`${formattedDate}T${hour.datetime}`).getHours() === tzTime ? "Now" : hour.datetime,
         temperature: hour.temp,
+        sunElevation: hour.sunelevation,
         condition: getFirstCondition(hour.conditions).condition,
         conditionImg: getFirstCondition(hour.conditions).imgURL,
+        conditionImgNight: getFirstCondition(hour.conditions).imgURLNight,
       })),
     };
   });

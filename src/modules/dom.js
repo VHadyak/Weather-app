@@ -19,6 +19,7 @@ const conditionDesc = document.querySelector("#condition-desc");
 const conditionIcon = document.querySelector("#condition-icon");
 const feelsLike = document.querySelector("#feels-like");
 
+const contentWrapper = document.querySelector(".content-wrapper");
 const dailyCardList = document.querySelector(".daily-card-list");
 const hourlyCardList = document.querySelector(".hourly-card-list");
 
@@ -35,6 +36,8 @@ const visibility = document.querySelector("#visibilityText");
 const humidity = document.querySelector("#humidityText");
 const uvIndex = document.querySelector("#uv-indexText");
 const windDirection = document.querySelector("#wind-directionText");
+
+const weatherConditions = ["Clear", "Partly Cloudy"]; // Apply night weather icons only for 'Clear' and 'Partly Cloudy' conditions
 
 // Update weather details for the selected card
 function updateWeatherDetails(dayData) {
@@ -62,6 +65,26 @@ export async function displayWeatherData(forecast, index) {
   } else if (forecast === "Day View") {
     renderSelectedCard(index);
   }
+}
+
+// Adjust background based on sun's elevation
+function adjustBackground(sunElevation) {
+  if (sunElevation >= 5) {
+    contentWrapper.style.backgroundImage = "linear-gradient(to right, #4facfe 0%, #00f2fe 100%)";
+    console.log("set light blue BG for a day");
+  } else if (sunElevation > -6 && sunElevation < 5) {
+    contentWrapper.style.backgroundImage =
+      "linear-gradient(to bottom, #0c3483 0%, #a2b6df 100%, #6b8cce 100%, #a2b6df 100%)";
+    console.log("for early morning and evening");
+  } else if (sunElevation <= -6) {
+    contentWrapper.style.backgroundImage = "linear-gradient(to bottom, #09203f 0%, #537895 100%)";
+    console.log("set dark bg for night");
+  }
+}
+
+// Helper function to check if it's night based on sun elevation
+function isNight(sunElevation) {
+  return sunElevation <= -6;
 }
 
 // Convert between Celsius/Fahrenheit
@@ -96,7 +119,6 @@ function degreesConverter(convertToCelsius, { currentData, weekForecastData, hou
 export function renderSelectedCard(index = 0) {
   const { currentData, weekForecastData } = storedWeatherData;
   let selectedDayData;
-
   if (index === 0) {
     selectedDayData = currentData;
   } else {
@@ -127,15 +149,23 @@ function renderDailyData(degreeChange = false) {
       if (!degreeChange) {
         locationName.textContent = currentData.location;
         conditionDesc.textContent = currentData.condition;
-        conditionIcon.src = currentData.conditionImg;
 
-        // DOM for today
+        conditionIcon.src =
+          isNight(currentData.sunElevation) && weatherConditions.includes(currentData.condition)
+            ? currentData.conditionImgNight
+            : currentData.conditionImg;
+
+        // DOM for today (card)
         cardTitle.textContent = currentData.day;
         desc.textContent = currentData.condition;
-        conditionImg.src = currentData.conditionImg;
+        conditionImg.src =
+          isNight(currentData.sunElevation) && weatherConditions.includes(currentData.condition)
+            ? currentData.conditionImgNight
+            : currentData.conditionImg;
 
         // Secondary data
         updateWeatherDetails(currentData);
+        adjustBackground(currentData.sunElevation);
       }
 
       feelsLike.textContent = `Feels like: ${currentData.feelsLike}°`;
@@ -230,6 +260,7 @@ function renderHourlyData(degreeChange = false) {
 
   hourlyCards.forEach((card, index) => {
     const hour = combineHours[index];
+    console.log(hour);
 
     const title = card.querySelector(".time");
     const temp = card.querySelector(".hourly-temp");
@@ -239,7 +270,10 @@ function renderHourlyData(degreeChange = false) {
     if (!degreeChange) {
       title.textContent = hour.time;
       desc.textContent = hour.condition;
-      conditionImg.src = hour.conditionImg;
+      conditionImg.src =
+        isNight(hour.sunElevation) && weatherConditions.includes(hour.condition)
+          ? hour.conditionImgNight
+          : hour.conditionImg;
     }
     temp.textContent = hour.temperature;
   });
