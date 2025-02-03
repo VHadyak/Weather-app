@@ -8,8 +8,13 @@
   <body>
     <div class="content-wrapper">
       <div class="search-wrapper">
-        <input type="search" id="search-input" />
-        <button type="submit" id="search-btn"></button>
+        <div class="input-container">
+          <input type="text" id="search-input" placeholder="Search city" autocomplete="off"/>
+          <button type="submit" id="search-btn"></button>
+        </div>
+        <div class="autocomplete-container">
+          <ul></ul>
+        </div>
       </div>
 
       <div class="main-info-wrapper">

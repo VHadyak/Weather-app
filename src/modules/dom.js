@@ -1,6 +1,8 @@
 import { resetSwiperState } from "./swiper";
 import { fetchWeatherData } from "./weatherData";
 
+export const ulList = document.querySelector("ul");
+
 export let hourlyIsActive = false; // Forecast toggle state
 let isCelsius = true;
 let storedWeatherData = null;
@@ -60,6 +62,7 @@ export async function displayWeatherData(forecast, index) {
 
   if (forecast === "Daily") {
     renderDailyData();
+    hourlyIsActive = false;
   } else if (forecast === "Hourly") {
     renderHourlyData();
   } else if (forecast === "Day View") {
@@ -82,7 +85,7 @@ function adjustBackground(sunElevation) {
   }
 }
 
-// Helper function to check if it's night based on sun elevation
+// Helper function to check if it's night based on sun's elevation
 function isNight(sunElevation) {
   return sunElevation <= -6;
 }
@@ -116,7 +119,7 @@ function degreesConverter(convertToCelsius, { currentData, weekForecastData, hou
 }
 
 // Render individual card's weather data based on user's selection
-export function renderSelectedCard(index = 0) {
+function renderSelectedCard(index = 0) {
   const { currentData, weekForecastData } = storedWeatherData;
   let selectedDayData;
   if (index === 0) {
@@ -260,7 +263,6 @@ function renderHourlyData(degreeChange = false) {
 
   hourlyCards.forEach((card, index) => {
     const hour = combineHours[index];
-    console.log(hour);
 
     const title = card.querySelector(".time");
     const temp = card.querySelector(".hourly-temp");
@@ -291,7 +293,18 @@ function renderHourlyData(degreeChange = false) {
   //console.log("hourly:", hourlyForecastData);
 }
 
-// DOM Events
+// Display city suggestions
+export function displaySuggestions(place) {
+  if (!place) return;
+
+  const item = document.createElement("li");
+  item.textContent = place;
+
+  ulList.appendChild(item);
+  ulList.style.display = "block";
+}
+
+// DOM Event listeners
 dailyBtn.addEventListener("click", () => {
   if (hourlyIsActive) {
     hourlyIsActive = false;

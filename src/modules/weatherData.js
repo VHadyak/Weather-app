@@ -11,17 +11,20 @@ import clearDay from "../assets/images/clearDay.gif";
 import clearNight from "../assets/images/clearNight.gif";
 
 import useLoader from "./loader.js";
-import { displayWeatherData } from "./dom";
+import { displayWeatherData, displaySuggestions, ulList } from "./dom";
 
 const btnRequest = document.getElementById("search-btn");
 const userInput = document.getElementById("search-input");
 const timeUpdated = document.querySelector("#time-updated");
 
 const DEFAULT_LOCATION = "New York";
+const DEBOUNCE_DELAY = 5000;
+
 let weatherDataCache = null;
 let delay = null;
 let updateInterval;
 let storedLocation = "";
+let debounceTimer; // Variable for slowing down API calls during input search
 
 // Fetch weather data from API
 export async function fetchWeatherData() {
@@ -31,7 +34,6 @@ export async function fetchWeatherData() {
   if (timeUpdated) {
     const time = format(new Date(), "HH:mm");
     timeUpdated.textContent = `Updated on: ${time}`;
-    console.log(time);
   }
 
   const location = storedLocation;
@@ -89,7 +91,7 @@ export async function fetchWeatherData() {
 
 /* Fetch the city and country name from the API, ensuring the location is returned in English,
 even if a foreign country is searched. */
-export async function getLocationDetails(latitude, longitude) {
+async function getLocationDetails(latitude, longitude) {
   const url = `https://us1.locationiq.com/v1/reverse?key=pk.bdcf91109a5cf61e65c8ee8445174854&lat=${latitude}&lon=${longitude}&format=json&`;
 
   try {
@@ -110,6 +112,31 @@ export async function getLocationDetails(latitude, longitude) {
     return { locality, country };
   } catch (err) {
     console.log("Error fetching an address location!", err.message);
+  }
+}
+
+// Fetch location suggestions while user using an input
+async function fetchLocationSuggestions(input) {
+  const url = `https://api.geoapify.com/v1/geocode/autocomplete?text=${input}&apiKey=1bf023a8930642378c60385bbacc31f2`;
+
+  if (input.trim() === "") return { citiesData: [] }; // Return empty array if there no value with white space
+
+  try {
+    const response = await fetch(url, { mode: "cors" });
+
+    if (!response.ok) {
+      if (response.status === 429) {
+        throw new Error("API rate limit exceeded. Try again later!");
+      }
+      throw new Error("Unable to fetch location's autocomplete");
+    }
+
+    const result = await response.json();
+    const citiesData = result.features;
+
+    return { citiesData };
+  } catch (err) {
+    console.log("Error fetching autocomplete!", err.message);
   }
 }
 
@@ -162,8 +189,10 @@ function organizeData(data) {
   const currentConditions = data.currentConditions;
   const tzoffset = data.tzoffset;
   const timezone = data.timezone;
-  const utcTime = currentDate.getUTCHours(); // Get the current hour in UTC (24-hour format)
-  let tzTime = utcTime + tzoffset; // Get time (in number format) of the target location based on timezone offset
+
+  const utcHours = currentDate.getUTCHours();
+  const utcMinutes = currentDate.getUTCMinutes();
+  let tzTime = utcHours + tzoffset + utcMinutes / 60; // Get time (in number format) of the target location based on timezone offset
 
   /* If local time greater than 24 or less than 0, 
   then readjust local time back to 24-hour range */
@@ -173,7 +202,8 @@ function organizeData(data) {
     tzTime += 24;
   }
 
-  const hoursLeftToday = 24 - tzTime;
+  const tzHour = Math.floor(tzTime);
+  const hoursLeftToday = 24 - tzHour;
 
   // Timezone date
   const dateFormat = new Intl.DateTimeFormat("en-US", {
@@ -259,7 +289,7 @@ function organizeData(data) {
     const filteredHours = isToday
       ? hours.filter((hour) => {
           const hourTime = new Date(`${formattedDate}T${hour.datetime}`).getHours();
-          return hourTime >= tzTime; // Return hours starting from the current hour in local time
+          return hourTime >= tzHour; // Return hours starting from the current hour in local time
         })
       : isTomorrow // Include remaining hours from tomorrow
         ? hours.slice(0, 24 - hoursLeftToday) // Subtract remaining hours of today from tomorrow's hours
@@ -270,7 +300,7 @@ function organizeData(data) {
       hours: filteredHours.map((hour) => ({
         time:
           // Set to 'Now' for current time
-          isToday && new Date(`${formattedDate}T${hour.datetime}`).getHours() === tzTime ? "Now" : hour.datetime,
+          isToday && new Date(`${formattedDate}T${hour.datetime}`).getHours() === tzHour ? "Now" : hour.datetime,
         temperature: hour.temp,
         sunElevation: hour.sunelevation,
         condition: getFirstCondition(hour.conditions).condition,
@@ -282,16 +312,17 @@ function organizeData(data) {
   return { currentData, weekForecastData, hourlyForecastData };
 }
 
+// Schedule a recurring fetch every 10 minutes
+const scheduleFetch = () => {
+  if (updateInterval) clearInterval(updateInterval); // Clear interval to avoid interval overlap
+
+  updateInterval = setInterval(() => {
+    displayWeatherData("Daily");
+  }, 600000);
+};
+
+// Fetch based on button click
 export function initFetch() {
-  // Schedule a recurring fetch every 10 minutes
-  const scheduleFetch = () => {
-    if (updateInterval) clearInterval(updateInterval); // Clear interval to avoid interval overlap
-
-    updateInterval = setInterval(() => {
-      displayWeatherData("Daily");
-    }, 600000);
-  };
-
   scheduleFetch();
 
   btnRequest.addEventListener("click", async (e) => {
@@ -303,8 +334,8 @@ export function initFetch() {
     // If same location has been searched consecutively, return that cached data without API call
     // or if default location has been searched after default location has been rendered, return the cached data
     if (
-      (location === storedLocation && weatherDataCache) ||
-      (location.toLowerCase() === storedLocation.toLowerCase() &&
+      (location.toLowerCase() === storedLocation.split(",")[0].trim().toLowerCase() && weatherDataCache) ||
+      (location.toLowerCase() === storedLocation.split(",")[0].trim().toLowerCase() &&
         storedLocation.toLowerCase() === DEFAULT_LOCATION.toLowerCase() &&
         weatherDataCache)
     ) {
@@ -315,17 +346,107 @@ export function initFetch() {
 
     storedLocation = location;
     weatherDataCache = null; // Clear previous cache
+    console.log(storedLocation);
 
     await displayWeatherData("Daily"); // Fetch and display the daily data
 
     // After search data is fetched, schedule the next fetch in 10 minutes
     scheduleFetch();
-
     userInput.value = "";
   });
 }
 
-// Default location when page loads
+// Fetch based on the clicked autocomplete suggestion
+function fetchSuggestedItems(places) {
+  const listItems = document.querySelectorAll("li");
+
+  listItems.forEach((item, index) => {
+    const place = places[index];
+    console.log(place);
+
+    item.addEventListener("click", async () => {
+      const city = place.properties.city;
+      const country = place.properties.country;
+      const location = `${city}, ${country}`;
+
+      if (
+        (location.split(",")[0].trim().toLowerCase() === storedLocation.toLowerCase() && weatherDataCache) ||
+        (location.split(",")[0].trim().toLowerCase() === storedLocation.toLowerCase() &&
+          storedLocation.toLowerCase() === DEFAULT_LOCATION.toLowerCase() &&
+          weatherDataCache)
+      ) {
+        userInput.value = "";
+        scheduleFetch();
+        return;
+      }
+
+      storedLocation = location;
+      weatherDataCache = null;
+
+      await displayWeatherData("Daily");
+
+      scheduleFetch();
+      userInput.value = "";
+    });
+  });
+}
+
+// Handler to debounce API calls and limit the amount of requests based on user's input
+// Also display autocompleted city-country suggestions based on the input
+function handleInputAutocomplete() {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(async () => {
+    const { citiesData } = await fetchLocationSuggestions(userInput.value);
+
+    // Clear previous suggestions
+    const placesList = document.querySelectorAll("ul > li");
+    placesList.forEach((place) => {
+      if (place) place.remove();
+    });
+
+    const uniquePlaces = new Set();
+
+    // Return places with valid city and it's country
+    const validPlaces = citiesData.filter((cityData) => {
+      const city = cityData.properties.city;
+      const country = cityData.properties.country;
+
+      // Ensure city and country exist and match user input (case-insensitive)!
+      return city && country && city.toLowerCase().includes(userInput.value.toLowerCase());
+    });
+
+    // Get city/country suggestion
+    validPlaces.forEach((cityData) => {
+      const city = cityData.properties.city;
+      const country = cityData.properties.country;
+      const place = `${city}, ${country}`;
+
+      // Check for duplicate cities
+      if (!uniquePlaces.has(place)) {
+        uniquePlaces.add(place);
+        displaySuggestions(place);
+      }
+    });
+
+    fetchSuggestedItems(validPlaces);
+  }, DEBOUNCE_DELAY);
+}
+
+userInput.addEventListener("input", handleInputAutocomplete);
+
+// If it was clicked outside the autocomplete list, hide the list
+document.addEventListener("click", (e) => {
+  if (
+    ulList.contains(e.target) ||
+    !ulList.contains(e.target) ||
+    (userInput.value.length === 0 && !userInput.contains(e.target))
+  ) {
+    ulList.style.display = "none";
+  } else {
+    ulList.style.display = "block";
+  }
+});
+
 document.addEventListener("DOMContentLoaded", () => {
   if (!storedLocation) {
     storedLocation = DEFAULT_LOCATION;

@@ -38,15 +38,26 @@ body {
 
 /* SEARCH WRAPPER */
 .search-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 35%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Container for input and button */
+.input-container {
   position: relative;
   justify-self: center;
-  width: 35%;
+  width: 100%;
   display: flex;
   justify-content: center;
   padding-top: 40px;
 }
 
-input[type="search"]#search-input {
+input[type="text"]#search-input {
   position: relative;
   width: 100%;
   padding-left: 15px;
@@ -81,6 +92,36 @@ button#search-btn::before {
   font-size: 16px;
 }
 
+.autocomplete-container {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 60%;
+  z-index: 10;
+  background-color: white;
+  border-radius: 10px;
+}
+
+.autocomplete-container ul {
+  display: none;
+  border-top: 1px solid black;
+  margin: 0;
+  padding: 0;
+}
+
+.autocomplete-container ul li {
+  list-style-type: none;
+  border-radius: 3px;
+  padding: 10px 10px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  color: black;
+}
+
+.autocomplete-container ul li:hover {
+  transform: scale(1.05);
+}
+
 /* HEADER INFO (WEATHER) */
 .main-info-wrapper {
   width: 35%;
@@ -90,6 +131,11 @@ button#search-btn::before {
   flex-direction: column;
   align-items: center;
 }
+
+/* 
+.main-info-wrapper > div {
+  display: none; 
+} */
 
 #location-name {
   padding-top: 10px;
