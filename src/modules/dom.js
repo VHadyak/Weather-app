@@ -2,6 +2,7 @@ import { resetSwiperState } from "./swiper";
 import { fetchWeatherData } from "./weatherData";
 
 export const ulList = document.querySelector("ul");
+export const autocompleteContainer = document.querySelector(".autocomplete-container");
 
 export let hourlyIsActive = false; // Forecast toggle state
 let isCelsius = true;
@@ -43,45 +44,90 @@ const weatherConditions = ["Clear", "Partly Cloudy"]; // Apply night weather ico
 
 // Update weather details for the selected card
 function updateWeatherDetails(dayData) {
+  let direction;
+  const directionNum = dayData.windDirection;
+
+  if (directionNum >= 0 && directionNum < 22.5) {
+    direction = "N";
+  } else if (directionNum >= 22.5 && directionNum < 67.5) {
+    direction = "NE";
+  } else if (directionNum >= 67.5 && directionNum < 112.5) {
+    direction = "E";
+  } else if (directionNum >= 112.5 && directionNum < 157.5) {
+    direction = "SE";
+  } else if (directionNum >= 157.5 && directionNum < 202.5) {
+    direction = "S";
+  } else if (directionNum >= 202.5 && directionNum < 247.5) {
+    direction = "SW";
+  } else if (directionNum >= 247.5 && directionNum < 292.5) {
+    direction = "W";
+  } else if (directionNum >= 292.5 && directionNum < 337.5) {
+    direction = "NW";
+  } else if (directionNum >= 337.5 && directionNum < 360) {
+    direction = "N";
+  }
+
   sunrise.textContent = dayData.sunrise;
   sunset.textContent = dayData.sunset;
-  windSpeed.textContent = dayData.windSpeed;
-  pressure.textContent = dayData.pressure;
-  visibility.textContent = dayData.visibility;
-  humidity.textContent = dayData.humidity;
-  uvIndex.textContent = dayData.uvIndex;
-  windDirection.textContent = dayData.windDirection;
+  windSpeed.textContent = `${dayData.windSpeed} km/h`;
+  pressure.textContent = `${dayData.pressure} hPa`;
+  visibility.textContent = `${dayData.visibility} km`;
+  humidity.textContent = `${dayData.humidity} %`;
+  uvIndex.textContent = `${dayData.uvIndex}`;
+  windDirection.textContent = `${dayData.windDirection}° ${direction}`;
+
+  return direction;
 }
 
 // Displays weather data after it has been fetched, based on the specific forecast type
-export async function displayWeatherData(forecast, index) {
+export async function displayWeatherData(forecast, isFetched = true) {
   const weatherData = await fetchWeatherData();
 
-  if (!weatherData) return;
+  if (!weatherData || weatherData === undefined) return;
+
+  fetched(isFetched);
   storedWeatherData = weatherData; // Store weather data that was fetched
 
   if (forecast === "Daily") {
     renderDailyData();
+    highlightForecastButton(true);
     hourlyIsActive = false;
-  } else if (forecast === "Hourly") {
-    renderHourlyData();
-  } else if (forecast === "Day View") {
-    renderSelectedCard(index);
   }
+}
+
+// If data was fetched, set celsius to true;
+export function fetched(isFetched) {
+  if (isFetched) {
+    isCelsius = true;
+    hourlyIsActive = false;
+    fahrenheitBtn.classList.remove("select");
+    celsiusBtn.classList.add("select");
+  }
+}
+
+// Update style based on sun's elevation (time of day)
+function updateCardStyles(cards, addClass, removeClasses) {
+  cards.forEach((card) => {
+    card.classList.remove(...removeClasses);
+    card.classList.add(addClass);
+  });
 }
 
 // Adjust background based on sun's elevation
 function adjustBackground(sunElevation) {
+  const cards = document.querySelectorAll(".card");
+  const secondaryCards = document.querySelectorAll(".data-item");
+
   if (sunElevation >= 5) {
-    contentWrapper.style.backgroundImage = "linear-gradient(to right, #4facfe 0%, #00f2fe 100%)";
-    console.log("set light blue BG for a day");
-  } else if (sunElevation > -6 && sunElevation < 5) {
-    contentWrapper.style.backgroundImage =
-      "linear-gradient(to bottom, #0c3483 0%, #a2b6df 100%, #6b8cce 100%, #a2b6df 100%)";
-    console.log("for early morning and evening");
+    contentWrapper.style.backgroundImage = "linear-gradient(120deg, #a1c4fd 0%, #c2e9fb 100%)";
+    updateCardStyles([...cards, ...secondaryCards], "day-style", ["evening-style", "night-style"]);
+  }
+  if (sunElevation > -6 && sunElevation < 5) {
+    contentWrapper.style.backgroundImage = "linear-gradient(180deg, rgb(78, 28, 213) 0%, #7654b0 100%)";
+    updateCardStyles([...cards, ...secondaryCards], "evening-style", ["day-style", "night-style"]);
   } else if (sunElevation <= -6) {
-    contentWrapper.style.backgroundImage = "linear-gradient(to bottom, #09203f 0%, #537895 100%)";
-    console.log("set dark bg for night");
+    contentWrapper.style.backgroundImage = "linear-gradient(to top,rgb(19, 49, 84) 0%, #466680 100%)";
+    updateCardStyles([...cards, ...secondaryCards], "night-style", ["day-style", "evening-style"]);
   }
 }
 
@@ -127,6 +173,7 @@ function renderSelectedCard(index = 0) {
   } else {
     selectedDayData = weekForecastData[index - 1];
   }
+  highLightSelectedCard(index);
   updateWeatherDetails(selectedDayData);
 }
 
@@ -134,6 +181,8 @@ function renderSelectedCard(index = 0) {
 function renderDailyData(degreeChange = false) {
   dailyCardList.style.display = "flex";
   hourlyCardList.style.display = "none";
+
+  highLightSelectedCard(); // Highlight first card after each new fetch
 
   const { currentData, weekForecastData } = storedWeatherData;
 
@@ -301,35 +350,64 @@ export function displaySuggestions(place) {
   item.textContent = place;
 
   ulList.appendChild(item);
+  autocompleteContainer.style.display = "block";
   ulList.style.display = "block";
+}
+
+// Highlight the currently selected card
+export function highLightSelectedCard(index = 0) {
+  const cards = document.querySelectorAll(".card");
+  const selectedCard = cards[index];
+  cards.forEach((card) => (card.style.border = "1px solid rgba(0, 0, 0, 0.25)"));
+  selectedCard.style.border = "2px solid rgb(0, 0, 0)";
+}
+
+function highlightForecastButton(isDaily) {
+  if (isDaily) {
+    hourlyBtn.style.border = "1px solid rgba(0, 0, 0, 0.7)";
+    hourlyBtn.style.opacity = "0.7";
+    dailyBtn.style.border = "1px solid rgba(0, 0, 0, 1)";
+    dailyBtn.style.opacity = "1";
+  } else {
+    dailyBtn.style.border = "1px solid rgba(0, 0, 0, 0.7)";
+    dailyBtn.style.opacity = "0.7";
+    hourlyBtn.style.border = "1px solid rgba(0, 0, 0, 1)";
+    hourlyBtn.style.opacity = "1";
+  }
 }
 
 // DOM Event listeners
 dailyBtn.addEventListener("click", () => {
   if (hourlyIsActive) {
+    fetched(false);
     hourlyIsActive = false;
-    displayWeatherData("Daily");
+    renderDailyData();
     resetSwiperState();
+    highlightForecastButton(true);
   }
 });
 
 hourlyBtn.addEventListener("click", () => {
   if (!hourlyIsActive) {
+    fetched(false);
     hourlyIsActive = true;
-    displayWeatherData("Hourly");
+    renderHourlyData();
     resetSwiperState();
+    highlightForecastButton(false);
   }
 });
 
 dailyCards.forEach((card, index) => {
   card.addEventListener("click", () => {
-    displayWeatherData("Day View", index);
+    renderSelectedCard(index);
   });
 });
 
 celsiusBtn.addEventListener("click", () => {
   if (!isCelsius) {
     isCelsius = true;
+    fahrenheitBtn.classList.remove("select");
+    celsiusBtn.classList.add("select");
     degreesConverter(true, storedWeatherData); //convert to Celsius
 
     // Prevent for degree buttons to switch daily/hourly tabs
@@ -340,6 +418,8 @@ celsiusBtn.addEventListener("click", () => {
 fahrenheitBtn.addEventListener("click", () => {
   if (isCelsius) {
     isCelsius = false;
+    celsiusBtn.classList.remove("select");
+    fahrenheitBtn.classList.add("select");
     degreesConverter(false, storedWeatherData); // convert to Fahrenheit
 
     return hourlyIsActive ? renderHourlyData(true) : renderDailyData(true);
@@ -349,8 +429,6 @@ fahrenheitBtn.addEventListener("click", () => {
 // Reset state after search
 const btnReq = document.querySelector("#search-btn");
 btnReq.addEventListener("click", () => {
-  hourlyIsActive = false;
-  isCelsius = true;
   resetSwiperState();
 });
 

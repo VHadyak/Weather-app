@@ -11,14 +11,21 @@ import clearDay from "../assets/images/clearDay.gif";
 import clearNight from "../assets/images/clearNight.gif";
 
 import useLoader from "./loader.js";
-import { displayWeatherData, displaySuggestions, ulList } from "./dom";
+import {
+  displayWeatherData,
+  displaySuggestions,
+  ulList,
+  highLightSelectedCard,
+  fetched,
+  autocompleteContainer,
+} from "./dom";
 
 const btnRequest = document.getElementById("search-btn");
 const userInput = document.getElementById("search-input");
 const timeUpdated = document.querySelector("#time-updated");
 
 const DEFAULT_LOCATION = "New York";
-const DEBOUNCE_DELAY = 5000;
+const DEBOUNCE_DELAY = 500; // CHANGE LATER TO 500
 
 let weatherDataCache = null;
 let delay = null;
@@ -65,6 +72,7 @@ export async function fetchWeatherData() {
     }
 
     const data = await response.json();
+
     weatherDataCache = organizeData(data); /* Cache the data to prevent future unnecessary API calls 
                                             (especially when switching daily/hourly forecasts) */
     console.log(data);
@@ -83,7 +91,7 @@ export async function fetchWeatherData() {
     }
     return weatherDataCache;
   } catch (err) {
-    console.log("Error fetching weather data!", err.message);
+    alert("Error fetching weather data!", err.message);
   } finally {
     useLoader(false);
   }
@@ -119,7 +127,9 @@ async function getLocationDetails(latitude, longitude) {
 async function fetchLocationSuggestions(input) {
   const url = `https://api.geoapify.com/v1/geocode/autocomplete?text=${input}&apiKey=1bf023a8930642378c60385bbacc31f2`;
 
-  if (input.trim() === "") return { citiesData: [] }; // Return empty array if there no value with white space
+  if (input.trim() === "") {
+    return { citiesData: [] }; // Return empty array if there no value with white space
+  }
 
   try {
     const response = await fetch(url, { mode: "cors" });
@@ -300,7 +310,9 @@ function organizeData(data) {
       hours: filteredHours.map((hour) => ({
         time:
           // Set to 'Now' for current time
-          isToday && new Date(`${formattedDate}T${hour.datetime}`).getHours() === tzHour ? "Now" : hour.datetime,
+          isToday && new Date(`${formattedDate}T${hour.datetime}`).getHours() === tzHour
+            ? "Now"
+            : hour.datetime.split(":").slice(0, 2).join(":"),
         temperature: hour.temp,
         sunElevation: hour.sunelevation,
         condition: getFirstCondition(hour.conditions).condition,
@@ -337,16 +349,17 @@ export function initFetch() {
       (location.toLowerCase() === storedLocation.split(",")[0].trim().toLowerCase() && weatherDataCache) ||
       (location.toLowerCase() === storedLocation.split(",")[0].trim().toLowerCase() &&
         storedLocation.toLowerCase() === DEFAULT_LOCATION.toLowerCase() &&
-        weatherDataCache)
+        weatherDataCache) ||
+      location === ""
     ) {
       userInput.value = "";
+      fetched(false);
       scheduleFetch();
       return;
     }
 
     storedLocation = location;
     weatherDataCache = null; // Clear previous cache
-    console.log(storedLocation);
 
     await displayWeatherData("Daily"); // Fetch and display the daily data
 
@@ -362,7 +375,6 @@ function fetchSuggestedItems(places) {
 
   listItems.forEach((item, index) => {
     const place = places[index];
-    console.log(place);
 
     item.addEventListener("click", async () => {
       const city = place.properties.city;
@@ -370,11 +382,12 @@ function fetchSuggestedItems(places) {
       const location = `${city}, ${country}`;
 
       if (
-        (location.split(",")[0].trim().toLowerCase() === storedLocation.toLowerCase() && weatherDataCache) ||
+        (location === storedLocation && weatherDataCache) ||
         (location.split(",")[0].trim().toLowerCase() === storedLocation.toLowerCase() &&
           storedLocation.toLowerCase() === DEFAULT_LOCATION.toLowerCase() &&
           weatherDataCache)
       ) {
+        fetched(false);
         userInput.value = "";
         scheduleFetch();
         return;
@@ -383,6 +396,7 @@ function fetchSuggestedItems(places) {
       storedLocation = location;
       weatherDataCache = null;
 
+      autocompleteContainer.style.display = "none";
       await displayWeatherData("Daily");
 
       scheduleFetch();
@@ -401,7 +415,10 @@ function handleInputAutocomplete() {
     // Clear previous suggestions
     const placesList = document.querySelectorAll("ul > li");
     placesList.forEach((place) => {
-      if (place) place.remove();
+      if (place) {
+        place.remove();
+        autocompleteContainer.style.display = "none";
+      }
     });
 
     const uniquePlaces = new Set();
@@ -442,6 +459,7 @@ document.addEventListener("click", (e) => {
     (userInput.value.length === 0 && !userInput.contains(e.target))
   ) {
     ulList.style.display = "none";
+    autocompleteContainer.style.display = "none";
   } else {
     ulList.style.display = "block";
   }
@@ -451,5 +469,6 @@ document.addEventListener("DOMContentLoaded", () => {
   if (!storedLocation) {
     storedLocation = DEFAULT_LOCATION;
   }
+  highLightSelectedCard();
   displayWeatherData("Daily");
 });
