@@ -47,6 +47,7 @@ function updateWeatherDetails(dayData) {
   let direction;
   const directionNum = dayData.windDirection;
 
+  // Set wind's direction
   if (directionNum >= 0 && directionNum < 22.5) {
     direction = "N";
   } else if (directionNum >= 22.5 && directionNum < 67.5) {
@@ -79,7 +80,7 @@ function updateWeatherDetails(dayData) {
   return direction;
 }
 
-// Displays weather data after it has been fetched, based on the specific forecast type
+// Displays weather data after it has been fetched, (show daily forecast by default)
 export async function displayWeatherData(forecast, isFetched = true) {
   const weatherData = await fetchWeatherData();
 
@@ -95,7 +96,7 @@ export async function displayWeatherData(forecast, isFetched = true) {
   }
 }
 
-// If data was fetched, set celsius to true;
+// If data was fetched, set celsius to true, and hourly forecast display to false;
 export function fetched(isFetched) {
   if (isFetched) {
     isCelsius = true;
@@ -168,6 +169,7 @@ function degreesConverter(convertToCelsius, { currentData, weekForecastData, hou
 function renderSelectedCard(index = 0) {
   const { currentData, weekForecastData } = storedWeatherData;
   let selectedDayData;
+
   if (index === 0) {
     selectedDayData = currentData;
   } else {
@@ -229,7 +231,7 @@ function renderDailyData(degreeChange = false) {
       temperature.appendChild(degreeSymbol);
     } else {
       // Adjust the index of weekData with card index
-      // since weekData doesn't account today's day
+      // since weekForecastData doesn't account today's day
       const day = weekForecastData[index - 1];
 
       // DOM for rest of the week
@@ -258,9 +260,6 @@ function renderDailyData(degreeChange = false) {
     degreeSym.textContent = "°";
     low.appendChild(degreeSym);
   });
-
-  console.log("current:", currentData);
-  console.log("week", weekForecastData);
 }
 
 // Dynamically create hourly cards
@@ -338,8 +337,6 @@ function renderHourlyData(degreeChange = false) {
     degreeSym.textContent = "°";
     t.appendChild(degreeSym);
   });
-
-  //console.log("hourly:", hourlyForecastData);
 }
 
 // Display city suggestions
@@ -408,7 +405,7 @@ celsiusBtn.addEventListener("click", () => {
     isCelsius = true;
     fahrenheitBtn.classList.remove("select");
     celsiusBtn.classList.add("select");
-    degreesConverter(true, storedWeatherData); //convert to Celsius
+    degreesConverter(true, storedWeatherData); // convert to Celsius
 
     // Prevent for degree buttons to switch daily/hourly tabs
     return hourlyIsActive ? renderHourlyData(true) : renderDailyData(true);
@@ -426,7 +423,7 @@ fahrenheitBtn.addEventListener("click", () => {
   }
 });
 
-// Reset state after search
+// Reset swiper state after search
 const btnReq = document.querySelector("#search-btn");
 btnReq.addEventListener("click", () => {
   resetSwiperState();

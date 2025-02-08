@@ -28,6 +28,7 @@ function forecastState() {
 export const resetSwiperState = () => {
   currentIndex = 0;
   const { wrapper, selector } = forecastState();
+
   // Reset position to the first card
   swipeCard(wrapper, selector);
 };
@@ -48,7 +49,7 @@ export default function swiperController() {
     const { wrapper, selector } = forecastState();
     if (currentIndex > 0) {
       currentIndex--;
-      swipeCard(wrapper, selector, currentIndex);
+      swipeCard(wrapper, selector);
     }
   });
 }

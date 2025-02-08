@@ -44,9 +44,10 @@ body {
   box-sizing: border-box;
   background-color: var(--bg-body-color);
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
-  background-color: rgb(0, 0, 0);
+  background: linear-gradient(to right, #12100e, #151e2b);
 }
 
 .content-wrapper {
@@ -329,7 +330,7 @@ button.next-btn {
 
 p.day,
 div.time {
-  font-size: 1.8rem;
+  font-size: min(1.5vw, 1.8rem);
   font-weight: 500;
 }
 
@@ -347,7 +348,7 @@ img.hourly-icon {
 .high-low {
   display: flex;
   gap: 15px;
-  font-size: 1.8rem;
+  font-size: min(1.5vw, 1.8rem);
 }
 
 .day-high,
@@ -373,7 +374,7 @@ img.hourly-icon {
 
 .daily-desc,
 .hourly-desc {
-  font-size: 1.4rem;
+  font-size: min(1.3vw, 1.4rem);
   font-weight: 500;
 }
 
@@ -476,7 +477,7 @@ div.data-item div.info-stat {
 }
 
 .card.day-style {
-  background: rgba(252, 252, 252, 0.15);
+  background: rgba(162, 216, 217, 0.23);
 }
 
 .data-item.day-style {
@@ -497,6 +498,41 @@ div.data-item div.info-stat {
 
 .data-item.night-style {
   background: rgba(214, 244, 248, 0.444);
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 20px;
+  margin-bottom: -20px;
+}
+
+.footer span {
+  font-size: 1rem;
+  color: rgba(176, 229, 248, 0.651);
+}
+
+.footer a {
+  display: flex;
+  text-decoration: none;
+  justify-content: center;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+  font-family: var(--font-family);
+}
+
+.footer img {
+  width: 20px;
+}
+
+.footer a:visited {
+  text-decoration: none;
+}
+
+.footer span:hover {
+  color: rgba(218, 237, 244, 0.752);
 }
 
 .spinner {

@@ -1,4 +1,4 @@
-import SunCalc from "suncalc"; // Library for calculating sun's position
+import SunCalc from "suncalc";
 import { format, parse, addDays } from "date-fns";
 
 // Import weather icons
@@ -20,18 +20,20 @@ import {
   autocompleteContainer,
 } from "./dom";
 
-const btnRequest = document.getElementById("search-btn");
-const userInput = document.getElementById("search-input");
 const timeUpdated = document.querySelector("#time-updated");
 
+const btnRequest = document.getElementById("search-btn");
+const userInput = document.getElementById("search-input");
+
 const DEFAULT_LOCATION = "New York";
-const DEBOUNCE_DELAY = 500; // CHANGE LATER TO 500
+const DEBOUNCE_DELAY = 500; // Delay time before fetching location suggestions to reduce API calls
 
 let weatherDataCache = null;
 let delay = null;
-let updateInterval;
 let storedLocation = "";
-let debounceTimer; // Variable for slowing down API calls during input search
+
+let updateInterval; // Scheduling fetch
+let debounceTimer; // Autocomplete interval
 
 // Fetch weather data from API
 export async function fetchWeatherData() {
@@ -48,9 +50,9 @@ export async function fetchWeatherData() {
 
   const currentTime = new Date(); // Before fetch
 
-  // Return cached data if:
-  // cached data exists and less than 10 minutes old (also adjusted for slight timing drift)
-  // else, make an API call to fetch new data
+  /* Return cached data if:
+  cached data exists and less than 10 minutes old (also adjusted for slight timing drift)
+  else, make an API call to fetch new data */
   if (weatherDataCache && delay && currentTime - delay < 600000 - 5) {
     return weatherDataCache;
   }
@@ -73,14 +75,10 @@ export async function fetchWeatherData() {
 
     const data = await response.json();
 
-    weatherDataCache = organizeData(data); /* Cache the data to prevent future unnecessary API calls 
-                                            (especially when switching daily/hourly forecasts) */
-    console.log(data);
-    delay = currentTime; // After fetch
-
-    console.log(weatherDataCache.currentData.temperature);
-    console.log(weatherDataCache.currentData.windSpeed);
-    console.log(weatherDataCache.currentData.windDirection);
+    /* Cache the data to prevent future unnecessary API calls 
+    (especially when switching between daily/hourly forecasts) */
+    weatherDataCache = organizeData(data);
+    delay = currentTime; // Track delay after fetch
 
     const { locality, country } = await getLocationDetails(data.latitude, data.longitude);
 
@@ -98,7 +96,7 @@ export async function fetchWeatherData() {
 }
 
 /* Fetch the city and country name from the API, ensuring the location is returned in English,
-even if a foreign country is searched. */
+even if a city is from a foreign country (after user has searched the location) */
 async function getLocationDetails(latitude, longitude) {
   const url = `https://us1.locationiq.com/v1/reverse?key=pk.bdcf91109a5cf61e65c8ee8445174854&lat=${latitude}&lon=${longitude}&format=json&`;
 
@@ -119,7 +117,7 @@ async function getLocationDetails(latitude, longitude) {
 
     return { locality, country };
   } catch (err) {
-    console.log("Error fetching an address location!", err.message);
+    alert("Error fetching an address location!", err.message);
   }
 }
 
@@ -146,7 +144,7 @@ async function fetchLocationSuggestions(input) {
 
     return { citiesData };
   } catch (err) {
-    console.log("Error fetching autocomplete!", err.message);
+    alert("Error fetching suggested locations!", err.message);
   }
 }
 
@@ -155,8 +153,8 @@ function def(val, fallback = "N/A") {
   return val != null ? val : fallback;
 }
 
-// Use condition IDs to ensure compatibility with future updates to the Weather API,
-// ...condition descriptions may change over time.
+/* Use condition IDs to ensure compatibility with future updates to the Weather API,
+...condition descriptions may change over time. */
 const conditionIDs = {
   type_42: {
     condition: "Partly Cloudy",
@@ -251,8 +249,8 @@ function organizeData(data) {
     humidity: def(currentConditions.humidity), // percentage
     windSpeed: def(currentConditions.windspeed), // km/h
     windDirection: def(currentConditions.winddir), // degrees
-    pressure: def(currentConditions.pressure), // mb
-    uvIndex: def(currentConditions.uvindex), // out of 10
+    pressure: def(currentConditions.pressure), // hPa
+    uvIndex: def(currentConditions.uvindex),
 
     // Use this for background transition change based on time of day
     get sunElevation() {
@@ -312,7 +310,7 @@ function organizeData(data) {
           // Set to 'Now' for current time
           isToday && new Date(`${formattedDate}T${hour.datetime}`).getHours() === tzHour
             ? "Now"
-            : hour.datetime.split(":").slice(0, 2).join(":"),
+            : hour.datetime.split(":").slice(0, 2).join(":"), // Show hour time in 'HH:mm' format
         temperature: hour.temp,
         sunElevation: hour.sunelevation,
         condition: getFirstCondition(hour.conditions).condition,
@@ -354,13 +352,14 @@ export function initFetch() {
     ) {
       userInput.value = "";
       fetched(false);
-      scheduleFetch();
+      scheduleFetch(); // Schedule fetch after cached data has been returned
       return;
     }
 
     storedLocation = location;
     weatherDataCache = null; // Clear previous cache
 
+    autocompleteContainer.style.display = "none";
     await displayWeatherData("Daily"); // Fetch and display the daily data
 
     // After search data is fetched, schedule the next fetch in 10 minutes
@@ -369,13 +368,14 @@ export function initFetch() {
   });
 }
 
-// Fetch based on the clicked autocomplete suggestion
+// Fetch data based on the clicked autocomplete suggestion
 function fetchSuggestedItems(places) {
   const listItems = document.querySelectorAll("li");
 
   listItems.forEach((item, index) => {
     const place = places[index];
 
+    // Fetch weather data based on clicked suggestion
     item.addEventListener("click", async () => {
       const city = place.properties.city;
       const country = place.properties.country;
@@ -417,11 +417,11 @@ function handleInputAutocomplete() {
     placesList.forEach((place) => {
       if (place) {
         place.remove();
-        autocompleteContainer.style.display = "none";
+        autocompleteContainer.style.display = "none"; // Remove container when no location is displayed
       }
     });
 
-    const uniquePlaces = new Set();
+    const uniquePlaces = new Set(); // Use Set to store unique places
 
     // Return places with valid city and it's country
     const validPlaces = citiesData.filter((cityData) => {
