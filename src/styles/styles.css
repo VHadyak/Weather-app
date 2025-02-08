@@ -79,7 +79,7 @@ body {
   padding-top: 40px;
 }
 
-input[type="text"]#search-input {
+#search-input {
   position: relative;
   width: 100%;
   padding-left: 15px;
