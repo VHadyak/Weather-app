@@ -1,4 +1,4 @@
-## Weather App ##
+## Weather App (Not Responsive) ##
 https://vhadyak.github.io/Weather-app/
 #### Includes:
 - ###### Daily/Hourly Forecast
